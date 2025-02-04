@@ -2,7 +2,7 @@
 
 public class SpinnerController : MonoBehaviour
 {
-    [SerializeField] private float edgeThickness = 0.5f;
+    [SerializeField] private float edgeThickness = 0.3f;
     [SerializeField] private float dragThreshold = 3f;
     [SerializeField] private float smoothSpeed = 10f;
     [SerializeField] private float angleThresholdMultiplier = 3f;
