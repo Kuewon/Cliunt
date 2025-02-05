@@ -7,7 +7,6 @@ public class SpinnerController : MonoBehaviour
     [SerializeField] private float smoothSpeed = 10f;
     [SerializeField] private float angleThresholdMultiplier = 3f;
     [SerializeField] private float dampingRate = 0.999995f;
-    [SerializeField] private float mobileRotationMultiplier = 0.05f;
 
     private Rigidbody2D rb;
     private CircleCollider2D circleCollider;
@@ -61,22 +60,25 @@ public class SpinnerController : MonoBehaviour
     private void HandleDrag(Vector2 currentPosition)
     {
         if (Time.deltaTime <= 0) return;
-
         Vector2 lastVector = lastMousePosition - spinnerCenter;
         Vector2 currentVector = currentPosition - spinnerCenter;
         float angle = Vector2.SignedAngle(lastVector, currentVector);
 
-#if UNITY_ANDROID || UNITY_IOS
-        angle *= mobileRotationMultiplier;
-#endif
+        // 회전 방향을 항상 오른쪽으로 만듦
+        float absAngle = Mathf.Abs(angle);
 
-        float anglePerSecond = Mathf.Abs(angle / Time.deltaTime);
+        float anglePerSecond = absAngle / Time.deltaTime;
         float threshold = dragThreshold * angleThresholdMultiplier;
 
+#if UNITY_ANDROID || UNITY_IOS
         targetAngularVelocity = anglePerSecond < threshold ?
-            angle * 40f :
-            angle * (80f + Mathf.Clamp01((anglePerSecond - threshold) / threshold) * 160f);
-
+            -absAngle * 10f :
+            -absAngle * (20f + Mathf.Clamp01((anglePerSecond - threshold) / threshold) * 40f);
+#else
+        targetAngularVelocity = anglePerSecond < threshold ?
+            -absAngle * 40f :
+            -absAngle * (80f + Mathf.Clamp01((anglePerSecond - threshold) / threshold) * 160f);
+#endif
         lastMousePosition = currentPosition;
     }
 
