@@ -3,29 +3,58 @@ using UnityEngine;
 public class HammarCollision : MonoBehaviour
 {
     private SpinnerGameManager gameManager;
+    private CharacterController characterController;
     private int hitCount = 1;
     private int maxHits = 6;
+    
+    private bool isInitialized = false;
+    private float initDelay = 0.5f; // ì‹œì‘ í›„ 0.5ì´ˆ ë™ì•ˆì€ ì¶©ëŒ ë¬´ì‹œ
+    private float timer = 0f;
 
     private void Start()
     {
-        // °ÔÀÓ ¸Å´ÏÀú Ã£±â
         gameManager = FindObjectOfType<SpinnerGameManager>();
         if (gameManager == null)
         {
             Debug.LogError("SpinnerGameManager not found in the scene!");
         }
+
+        characterController = FindObjectOfType<CharacterController>();
+        if (characterController == null)
+        {
+            Debug.LogError("CharacterController not found in the scene!");
+        }
+    }
+
+    private void Update()
+    {
+        if (!isInitialized)
+        {
+            timer += Time.deltaTime;
+            if (timer >= initDelay)
+            {
+                isInitialized = true;
+            }
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // ì´ˆê¸°í™”ê°€ ì™„ë£Œë˜ì§€ ì•Šì•˜ë‹¤ë©´ ì¶©ëŒ ë¬´ì‹œ
+        if (!isInitialized) return;
+
         if (other.CompareTag("SpinnerCircle"))
         {
             Debug.Log("Hit" + hitCount);
 
-            // °ÔÀÓ ¸Å´ÏÀú¸¦ ÅëÇØ Ãæµ¹ Ã³¸®
             if (gameManager != null)
             {
                 gameManager.OnHammarHit();
+            }
+
+            if (characterController != null)
+            {
+                characterController.TriggerManualAttack();
             }
 
             hitCount++;

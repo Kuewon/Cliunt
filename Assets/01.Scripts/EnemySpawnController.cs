@@ -4,8 +4,8 @@ public class EnemySpawnController : MonoBehaviour
 {
     [SerializeField] private GameObject enemyPrefab;  // 적 프리팹
     [SerializeField] private float spawnInterval = 3f;  // 스폰 간격
-    [SerializeField] private float spawnHeight = 0f;   // 스폰 높이
-    
+    [SerializeField] private float spawnHeight = 1f;   // y축 1로 설정
+
     private float timer = 0f;
     private Camera mainCamera;
     private float spawnX;  // 스폰 X 좌표
@@ -30,7 +30,7 @@ public class EnemySpawnController : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        Vector2 spawnPosition = new Vector2(spawnX, spawnHeight);
+        Vector2 spawnPosition = new Vector2(spawnX, 1f); // y축을 1로 고정
         Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
     }
 }
