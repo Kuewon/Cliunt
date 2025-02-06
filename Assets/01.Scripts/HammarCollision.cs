@@ -4,16 +4,23 @@ public class HammarCollision : MonoBehaviour
 {
     [SerializeField] private CoolingBar coolingBar;
     [SerializeField] private float attackPower = 10f;
-
+    
+    private CharacterController characterController;
     private int hitCount = 1;
     private int maxHits = 6;
-    private bool isFirstHit = true;  // Ã¹ ¹øÂ° È÷Æ®ÀÎÁö È®ÀÎÇÏ´Â º¯¼ö
+    private bool isFirstHit = true;
 
     private void Start()
     {
         if (coolingBar == null)
         {
             coolingBar = FindObjectOfType<CoolingBar>();
+        }
+
+        characterController = FindObjectOfType<CharacterController>();
+        if (characterController == null)
+        {
+            Debug.LogError("CharacterController not found in the scene!");
         }
     }
 
@@ -23,12 +30,22 @@ public class HammarCollision : MonoBehaviour
         {
             Debug.Log("Hit" + hitCount);
 
-            if (coolingBar != null && !isFirstHit)  // Ã¹ ¹øÂ° È÷Æ®°¡ ¾Æ´Ò ¶§¸¸ °ÔÀÌÁö Áõ°¡
+            if (!isFirstHit)  // ì²« ë²ˆì§¸ íˆíŠ¸ê°€ ì•„ë‹ ë•Œë§Œ ì²˜ë¦¬
             {
-                coolingBar.IncrementGauge(attackPower);
+                // ì¿¨ë§ ê²Œì´ì§€ ì¦ê°€
+                if (coolingBar != null)
+                {
+                    coolingBar.IncrementGauge(attackPower);
+                }
+
+                // ê³µê²© ì‹¤í–‰
+                if (characterController != null)
+                {
+                    characterController.TriggerManualAttack();
+                }
             }
 
-            if (isFirstHit)  // Ã¹ ¹øÂ° È÷Æ® Ã³¸® ÈÄ ÇÃ·¡±× º¯°æ
+            if (isFirstHit)  // ì²« ë²ˆì§¸ íˆíŠ¸ ì²˜ë¦¬
             {
                 isFirstHit = false;
             }
