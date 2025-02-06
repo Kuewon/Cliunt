@@ -2,17 +2,18 @@ using UnityEngine;
 
 public class HammarCollision : MonoBehaviour
 {
-    private SpinnerGameManager gameManager;
+    [SerializeField] private CoolingBar coolingBar;
+    [SerializeField] private float attackPower = 10f;
+
     private int hitCount = 1;
     private int maxHits = 6;
+    private bool isFirstHit = true;  // 첫 번째 히트인지 확인하는 변수
 
     private void Start()
     {
-        // 게임 매니저 찾기
-        gameManager = FindObjectOfType<SpinnerGameManager>();
-        if (gameManager == null)
+        if (coolingBar == null)
         {
-            Debug.LogError("SpinnerGameManager not found in the scene!");
+            coolingBar = FindObjectOfType<CoolingBar>();
         }
     }
 
@@ -22,10 +23,14 @@ public class HammarCollision : MonoBehaviour
         {
             Debug.Log("Hit" + hitCount);
 
-            // 게임 매니저를 통해 충돌 처리
-            if (gameManager != null)
+            if (coolingBar != null && !isFirstHit)  // 첫 번째 히트가 아닐 때만 게이지 증가
             {
-                gameManager.OnHammarHit();
+                coolingBar.IncrementGauge(attackPower);
+            }
+
+            if (isFirstHit)  // 첫 번째 히트 처리 후 플래그 변경
+            {
+                isFirstHit = false;
             }
 
             hitCount++;

@@ -1,58 +1,28 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(RectMask2D))]
 public class CoolingBar : MonoBehaviour
 {
-    [Header("UI References")]
-    [SerializeField] private Image backgroundBar;
-    [SerializeField] private Image fillBar;
-    [SerializeField] private RectMask2D fillBarMask;
-
-    [Header("Gauge Settings")]
-    [SerializeField] private float baseCoolingGauge = 100f;        // 기본 쿨링 게이지 최대값
-    [SerializeField] private float baseCoolingRate = 0.0005f;      // 기본 쿨링 회복량 (0.05%)
-    [SerializeField] private float decreaseRate = 0.005f;          // 게이지 감소율 (0.5%)
-    [SerializeField] private float decreaseInterval = 0.1f;        // 게이지 감소 간격 (0.1초)
-
-    private SpinnerGameManager gameManager;
+    private RectMask2D fillBarMask;
+    private RectTransform rectTransform;
+    private float maxGauge = 100f;
     private float currentGauge = 0f;
-    private bool isSpinnerLocked = false;
-    private float timer = 0f;
     private float gaugeHeight;
+
+    private float decreaseInterval = 0.1f;
+    private float decreaseRate = 0.005f;
+    private float timer = 0f;
+
+    private bool isLocked = false;
+    public bool IsLocked => isLocked;  // 외부에서 상태 확인용 프로퍼티 추가
 
     private void Awake()
     {
-        if (backgroundBar == null || fillBar == null)
-        {
-            Debug.LogError("Required UI components are missing on CoolingBar!");
-            enabled = false;
-            return;
-        }
-
-        if (fillBarMask == null)
-        {
-            fillBarMask = fillBar.GetComponent<RectMask2D>();
-        }
-
-        gaugeHeight = fillBar.rectTransform.rect.height;
-    }
-
-    private void Start()
-    {
-        gameManager = FindObjectOfType<SpinnerGameManager>();
-        if (gameManager == null)
-        {
-            Debug.LogError("SpinnerGameManager not found in the scene!");
-        }
-
-        InitializeUI();
-        UpdateGaugeVisual();
-    }
-
-    private void InitializeUI()
-    {
-        fillBar.type = Image.Type.Simple;
-        fillBar.fillCenter = true;
+        fillBarMask = GetComponent<RectMask2D>();
+        rectTransform = GetComponent<RectTransform>();
+        gaugeHeight = rectTransform.rect.height;
+        fillBarMask.padding = new Vector4(0, 0, 0, gaugeHeight);
     }
 
     private void Update()
@@ -65,51 +35,28 @@ public class CoolingBar : MonoBehaviour
         }
     }
 
-    // 게임 매니저에서 호출할 메서드
-    public bool IncrementGauge(float amount)
+    private void DecreaseGauge()
     {
-        if (isSpinnerLocked)
-        {
-            return false;
-        }
+        float decreaseAmount = maxGauge * decreaseRate;
+        currentGauge = Mathf.Max(0f, currentGauge - decreaseAmount);
 
-        currentGauge += amount;
-
-        if (currentGauge >= baseCoolingGauge)
+        if (currentGauge <= 0f && isLocked)
         {
-            currentGauge = baseCoolingGauge;
-            isSpinnerLocked = true;
-            // 게임 매니저에게 스피너 잠금 상태 알림
-            if (gameManager != null)
-            {
-                gameManager.OnSpinnerLocked(true);
-            }
+            isLocked = false;
         }
 
         UpdateGaugeVisual();
-        return true;
     }
 
-    private void DecreaseGauge()
+    public void IncrementGauge(float amount)
     {
-        float baseCoolingAmount = baseCoolingGauge * baseCoolingRate;
-        float decreaseAmount = baseCoolingGauge * decreaseRate;
-        float totalChange = decreaseAmount - baseCoolingAmount;
+        if (isLocked) return;
 
-        currentGauge = Mathf.Max(0f, currentGauge - totalChange);
+        currentGauge = Mathf.Min(currentGauge + amount, maxGauge);
 
-        if (currentGauge <= 0f)
+        if (currentGauge >= maxGauge)
         {
-            currentGauge = 0f;
-            if (isSpinnerLocked)
-            {
-                isSpinnerLocked = false;
-                // 게임 매니저에게 스피너 잠금 해제 상태 알림
-                if (gameManager != null)
-                {
-                    gameManager.OnSpinnerLocked(false);
-                }
-            }
+            isLocked = true;
         }
 
         UpdateGaugeVisual();
@@ -117,21 +64,8 @@ public class CoolingBar : MonoBehaviour
 
     private void UpdateGaugeVisual()
     {
-        if (fillBar != null && fillBarMask != null)
-        {
-            float fillRatio = currentGauge / baseCoolingGauge;
-            float maskHeight = (1f - fillRatio) * gaugeHeight;
-            fillBarMask.padding = new Vector4(0, 0, 0, maskHeight);
-        }
-    }
-
-    public float GetGaugePercentage()
-    {
-        return (currentGauge / baseCoolingGauge) * 100f;
-    }
-
-    public bool IsLocked()
-    {
-        return isSpinnerLocked;
+        float fillRatio = currentGauge / maxGauge;
+        float maskHeight = (1f - fillRatio) * gaugeHeight;
+        fillBarMask.padding = new Vector4(0, 0, 0, maskHeight);
     }
 }
