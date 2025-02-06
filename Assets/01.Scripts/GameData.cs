@@ -13,7 +13,14 @@ public class GameData
     /// </summary>
     public void SetSheetData(string sheetName, List<Dictionary<string, object>> data)
     {
+        if (data == null || data.Count == 0)
+        {
+            Debug.LogWarning($"⚠️ `{sheetName}` 시트의 데이터가 비어 있습니다.");
+            return;
+        }
+
         sheetData[sheetName] = data;
+        Debug.Log($"✅ `{sheetName}` 시트 데이터 저장 완료! 총 {data.Count}개의 행이 저장되었습니다.");
     }
 
     /// <summary>
@@ -21,11 +28,20 @@ public class GameData
     /// </summary>
     public Dictionary<string, object> GetRow(string sheetName, int index)
     {
-        if (sheetData.ContainsKey(sheetName) && index >= 0 && index < sheetData[sheetName].Count)
+        if (!sheetData.ContainsKey(sheetName))
         {
-            return sheetData[sheetName][index];
+            Debug.LogError($"❌ `{sheetName}` 시트를 찾을 수 없습니다.");
+            return null;
         }
-        return null;
+
+        if (index < 0 || index >= sheetData[sheetName].Count)
+        {
+            Debug.LogError($"❌ `{sheetName}` 시트에서 인덱스 {index}를 찾을 수 없습니다. (총 {sheetData[sheetName].Count}개의 행 존재)");
+            return null;
+        }
+
+        Debug.Log($"🔹 `{sheetName}` 시트에서 인덱스 {index} 데이터 가져옴.");
+        return sheetData[sheetName][index];
     }
 
     /// <summary>
@@ -34,6 +50,19 @@ public class GameData
     public object GetValue(string sheetName, int index, string key)
     {
         Dictionary<string, object> row = GetRow(sheetName, index);
-        return row != null && row.ContainsKey(key) ? row[key] : null;
+        if (row == null)
+        {
+            Debug.LogError($"❌ `{sheetName}` 시트에서 인덱스 {index}의 데이터를 찾을 수 없습니다.");
+            return null;
+        }
+
+        if (!row.ContainsKey(key))
+        {
+            Debug.LogError($"❌ `{sheetName}` 시트에서 인덱스 {index}에 `{key}` 키가 존재하지 않습니다.");
+            return null;
+        }
+
+        Debug.Log($"✅ `{sheetName}` 시트에서 `{key}` 값 가져오기: {row[key]}");
+        return row[key];
     }
 }
