@@ -124,7 +124,7 @@ MonoBehaviour:
   moveSpeed: 1
   attackRange: 1
   attackInterval: 1
-  attackDamage: 10
+  attackDamage: 2
 --- !u!114 &1321179022095053798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138,6 +138,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+  normalHitColor: {r: 1, g: 1, b: 1, a: 1}
+  criticalHitColor: {r: 1, g: 0, b: 0, a: 1}
+  criticalHitPushForce: 1.5
 --- !u!61 &9200755694405448517
 BoxCollider2D:
   m_ObjectHideFlags: 0

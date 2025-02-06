@@ -363,7 +363,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 4408125642284411495, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
   spawnInterval: 3
-  spawnHeight: 1
+  minSpawnHeight: 0
+  maxSpawnHeight: 2
+  showSpawnRange: 1
 --- !u!4 &231713978
 Transform:
   m_ObjectHideFlags: 0
@@ -690,21 +692,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1321179022095053798, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
+      propertyPath: criticalHitPushForce
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4408125642284411495, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
       propertyPath: m_Name
       value: Enemy
-      objectReference: {fileID: 0}
-    - target: {fileID: 4408125642284411495, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
-      propertyPath: m_TagString
-      value: Untagged
-      objectReference: {fileID: 0}
-    - target: {fileID: 6176205645799822586, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
-      propertyPath: moveSpeed
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6176205645799822586, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
-      propertyPath: attackDamage
-      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -858,6 +852,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e02f934ad820aba49ba9ade42a84bbbd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  coolingBar: {fileID: 0}
+  attackPower: 10
 --- !u!50 &848041235
 Rigidbody2D:
   serializedVersion: 4
@@ -1347,13 +1343,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3156a014e83b9f043847a9ebe18f19af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backgroundBar: {fileID: 0}
-  fillBar: {fileID: 0}
-  fillBarMask: {fileID: 0}
-  baseCoolingGauge: 100
-  baseCoolingRate: 0.0005
-  decreaseRate: 0.005
-  decreaseInterval: 0.1
 --- !u!114 &1570093548
 MonoBehaviour:
   m_ObjectHideFlags: 0
