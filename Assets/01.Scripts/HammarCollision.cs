@@ -4,11 +4,12 @@ public class HammarCollision : MonoBehaviour
 {
     [SerializeField] private CoolingBar coolingBar;
     [SerializeField] private float attackPower = 10f;
-    
+
     private CharacterController characterController;
     private int hitCount = 1;
     private int maxHits = 6;
     private bool isFirstHit = true;
+    private bool wasLocked = false;  // max 상태였는지 기록
 
     private void Start()
     {
@@ -16,7 +17,6 @@ public class HammarCollision : MonoBehaviour
         {
             coolingBar = FindObjectOfType<CoolingBar>();
         }
-
         characterController = FindObjectOfType<CharacterController>();
         if (characterController == null)
         {
@@ -24,36 +24,56 @@ public class HammarCollision : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        // CoolingBar 상태 업데이트
+        if (coolingBar != null)
+        {
+            if (coolingBar.IsLocked)
+            {
+                wasLocked = true;
+            }
+            else if (wasLocked && !coolingBar.IsLocked)
+            {
+                // 잠금이 해제되면(게이지가 0이 되면) 리셋
+                wasLocked = false;
+                isFirstHit = true;
+                hitCount = 1;
+            }
+        }
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("SpinnerCircle"))
         {
-            Debug.Log("Hit" + hitCount);
-
-            if (!isFirstHit)  // 첫 번째 히트가 아닐 때만 처리
+            // wasLocked가 true면 게이지가 0이 될 때까지 hit 처리 안함
+            if (!wasLocked)
             {
-                // 쿨링 게이지 증가
-                if (coolingBar != null)
+                Debug.Log("Hit" + hitCount);
+
+                if (!isFirstHit)
                 {
-                    coolingBar.IncrementGauge(attackPower);
+                    if (coolingBar != null)
+                    {
+                        coolingBar.IncrementGauge(attackPower);
+                    }
+                    if (characterController != null)
+                    {
+                        characterController.TriggerManualAttack();
+                    }
                 }
 
-                // 공격 실행
-                if (characterController != null)
+                if (isFirstHit)
                 {
-                    characterController.TriggerManualAttack();
+                    isFirstHit = false;
                 }
-            }
 
-            if (isFirstHit)  // 첫 번째 히트 처리
-            {
-                isFirstHit = false;
-            }
-
-            hitCount++;
-            if (hitCount > maxHits)
-            {
-                hitCount = 1;
+                hitCount++;
+                if (hitCount > maxHits)
+                {
+                    hitCount = 1;
+                }
             }
         }
     }

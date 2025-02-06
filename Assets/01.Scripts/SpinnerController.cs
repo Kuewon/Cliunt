@@ -18,7 +18,13 @@ public class SpinnerController : MonoBehaviour
     private float targetAngularVelocity;
     private bool isDragging;
 
-    private CoolingBar coolingBar;  // CoolingBar 참조 추가
+    private CoolingBar coolingBar;
+    private bool wasLocked = false;
+    private float originalRotation;
+    private bool isJittering = false;
+    private float jitterAngle = 5f;
+    private float jitterDuration = 0.1f;
+    private float jitterTimer = 0f;
 
     private void Start()
     {
@@ -26,7 +32,7 @@ public class SpinnerController : MonoBehaviour
         circleCollider = GetComponent<CircleCollider2D>();
         mainCamera = Camera.main;
         spinnerCenter = transform.position;
-        coolingBar = FindObjectOfType<CoolingBar>();  // CoolingBar 찾기
+        coolingBar = FindObjectOfType<CoolingBar>();
 
         rb.angularDrag = 0;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -36,6 +42,61 @@ public class SpinnerController : MonoBehaviour
     {
         Vector2 inputPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
 
+        // max 게이지 상태 진입 시
+        if (coolingBar != null && coolingBar.IsLocked && !wasLocked)
+        {
+            isDragging = false;
+            wasLocked = true;
+            originalRotation = transform.eulerAngles.z;
+            isJittering = false;
+        }
+        else if (coolingBar != null && !coolingBar.IsLocked)
+        {
+            wasLocked = false;
+        }
+
+        // max 게이지 상태에서의 처리
+        if (coolingBar != null && coolingBar.IsLocked)
+        {
+            // 깔짝거림 시도
+            if (Input.GetMouseButtonDown(0) && Mathf.Abs(rb.angularVelocity) < 0.01f)
+            {
+                float radius = circleCollider.radius * transform.localScale.x;
+                if (Vector2.Distance(inputPosition, transform.position) <= radius &&
+                    Vector2.Distance(inputPosition, transform.position) >= radius * (1 - edgeThickness))
+                {
+                    StartJitter();
+                }
+            }
+
+            // 깔짝거림 진행
+            if (isJittering)
+            {
+                jitterTimer += Time.deltaTime;
+                if (jitterTimer <= jitterDuration / 2)
+                {
+                    transform.rotation = Quaternion.Euler(0, 0, originalRotation - jitterAngle * (jitterTimer / (jitterDuration / 2)));
+                }
+                else if (jitterTimer <= jitterDuration)
+                {
+                    float t = (jitterTimer - jitterDuration / 2) / (jitterDuration / 2);
+                    transform.rotation = Quaternion.Euler(0, 0, originalRotation - jitterAngle * (1 - t));
+                }
+                else
+                {
+                    transform.rotation = Quaternion.Euler(0, 0, originalRotation);
+                    isJittering = false;
+                }
+            }
+
+            if (!isJittering)
+            {
+                ApplyRotation();
+            }
+            return;
+        }
+
+        // 일반 상태에서의 처리
         if (Input.GetMouseButtonDown(0))
             CheckInputClick(inputPosition);
         else if (Input.GetMouseButton(0) && isDragging)
@@ -46,14 +107,15 @@ public class SpinnerController : MonoBehaviour
         ApplyRotation();
     }
 
+    private void StartJitter()
+    {
+        isJittering = true;
+        jitterTimer = 0f;
+        originalRotation = transform.eulerAngles.z;
+    }
+
     private void CheckInputClick(Vector2 inputPosition)
     {
-        // 게이지가 잠겨있으면 드래그 불가
-        if (coolingBar != null && coolingBar.IsLocked)
-        {
-            return;
-        }
-
         float radius = circleCollider.radius * transform.localScale.x;
         if (Vector2.Distance(inputPosition, transform.position) <= radius &&
             Vector2.Distance(inputPosition, transform.position) >= radius * (1 - edgeThickness))
