@@ -363,7 +363,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 4408125642284411495, guid: 3bacd05e055f44841aba19fe54b3ad6e, type: 3}
   spawnInterval: 3
-  spawnHeight: 1
+  minSpawnHeight: 0
+  maxSpawnHeight: 2
+  showSpawnRange: 1
 --- !u!4 &231713978
 Transform:
   m_ObjectHideFlags: 0
@@ -863,7 +865,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coolingBar: {fileID: 0}
-  attackPower: 10
+  attackPower: 0
+  maxHits: 0
 --- !u!50 &848041235
 Rigidbody2D:
   serializedVersion: 4

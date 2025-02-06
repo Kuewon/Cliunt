@@ -4,12 +4,13 @@ public class HammarCollision : MonoBehaviour
 {
     [SerializeField] private CoolingBar coolingBar;
     [SerializeField] private float attackPower = 10f;
-
+    [SerializeField] private int maxHits = 6;
     private CharacterController characterController;
     private int hitCount = 1;
-    private int maxHits = 6;
     private bool isFirstHit = true;
-    private bool wasLocked = false;  // max 상태였는지 기록
+    private bool wasLocked = false;
+
+    private bool ignoreInitialCollisions = true; // ✅ 초기 충돌 무시 변수
 
     private void Start()
     {
@@ -22,35 +23,34 @@ public class HammarCollision : MonoBehaviour
         {
             Debug.LogError("CharacterController not found in the scene!");
         }
+
+        // 🔴 스프레드시트 제거 후 하드코딩 적용
+        attackPower = 10f;
+        maxHits = 6;
     }
 
     private void Update()
     {
-        // CoolingBar 상태 업데이트
-        if (coolingBar != null)
+        // ✅ 첫 번째 프레임이 지나면 충돌 감지 활성화
+        if (ignoreInitialCollisions)
         {
-            if (coolingBar.IsLocked)
-            {
-                wasLocked = true;
-            }
-            else if (wasLocked && !coolingBar.IsLocked)
-            {
-                // 잠금이 해제되면(게이지가 0이 되면) 리셋
-                wasLocked = false;
-                isFirstHit = true;
-                hitCount = 1;
-            }
+            ignoreInitialCollisions = false;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // ✅ 초기 충돌 무시
+        if (ignoreInitialCollisions) return;
+
         if (other.CompareTag("SpinnerCircle"))
         {
-            // wasLocked가 true면 게이지가 0이 될 때까지 hit 처리 안함
             if (!wasLocked)
             {
-                Debug.Log("Hit" + hitCount);
+                if (hitCount <= maxHits)
+                {
+                    Debug.Log($"Hit {hitCount}");
+                }
 
                 if (!isFirstHit)
                 {
@@ -70,6 +70,7 @@ public class HammarCollision : MonoBehaviour
                 }
 
                 hitCount++;
+
                 if (hitCount > maxHits)
                 {
                     hitCount = 1;

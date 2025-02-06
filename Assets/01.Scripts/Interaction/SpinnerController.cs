@@ -5,11 +5,14 @@ public class SpinnerController : MonoBehaviour
     [SerializeField] private float edgeThickness = 0.7f;
     [SerializeField] private float dragThreshold = 3f;
     [SerializeField] private float smoothSpeed = 10f;
-    [SerializeField]
-    [Range(0.9f, 0.9999f)]
-    private float dampingRate = 0.995f;
+    [SerializeField][Range(0.9f, 0.9999f)] private float dampingRate = 0.995f;
 
     private float angleThresholdMultiplier = 3f;
+    private float baseSpinSpeed;
+    private float baseMaxSpinSpeed;
+    private float spinMinVelocity;
+    private float spinStopThreshold = 40f;
+
     private Rigidbody2D rb;
     private CircleCollider2D circleCollider;
     private Camera mainCamera;
@@ -36,13 +39,19 @@ public class SpinnerController : MonoBehaviour
 
         rb.angularDrag = 0;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        // 🔴 하드코딩된 값으로 설정
+        baseSpinSpeed = 0f;
+        baseMaxSpinSpeed = 5f;
+        spinMinVelocity = 100f;
+
+        Debug.Log($"✅ SpinnerController 초기화 완료: baseSpinSpeed={baseSpinSpeed}, baseMaxSpinSpeed={baseMaxSpinSpeed}, spinMinVelocity={spinMinVelocity}");
     }
 
     private void Update()
     {
         Vector2 inputPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
 
-        // max 게이지 상태 진입 시
         if (coolingBar != null && coolingBar.IsLocked && !wasLocked)
         {
             isDragging = false;
@@ -55,10 +64,8 @@ public class SpinnerController : MonoBehaviour
             wasLocked = false;
         }
 
-        // max 게이지 상태에서의 처리
         if (coolingBar != null && coolingBar.IsLocked)
         {
-            // 깔짝거림 시도
             if (Input.GetMouseButtonDown(0) && Mathf.Abs(rb.angularVelocity) < 0.01f)
             {
                 float radius = circleCollider.radius * transform.localScale.x;
@@ -69,34 +76,17 @@ public class SpinnerController : MonoBehaviour
                 }
             }
 
-            // 깔짝거림 진행
             if (isJittering)
             {
-                jitterTimer += Time.deltaTime;
-                if (jitterTimer <= jitterDuration / 2)
-                {
-                    transform.rotation = Quaternion.Euler(0, 0, originalRotation - jitterAngle * (jitterTimer / (jitterDuration / 2)));
-                }
-                else if (jitterTimer <= jitterDuration)
-                {
-                    float t = (jitterTimer - jitterDuration / 2) / (jitterDuration / 2);
-                    transform.rotation = Quaternion.Euler(0, 0, originalRotation - jitterAngle * (1 - t));
-                }
-                else
-                {
-                    transform.rotation = Quaternion.Euler(0, 0, originalRotation);
-                    isJittering = false;
-                }
+                HandleJitter();
             }
-
-            if (!isJittering)
+            else
             {
                 ApplyRotation();
             }
             return;
         }
 
-        // 일반 상태에서의 처리
         if (Input.GetMouseButtonDown(0))
             CheckInputClick(inputPosition);
         else if (Input.GetMouseButton(0) && isDragging)
@@ -112,6 +102,25 @@ public class SpinnerController : MonoBehaviour
         isJittering = true;
         jitterTimer = 0f;
         originalRotation = transform.eulerAngles.z;
+    }
+
+    private void HandleJitter()
+    {
+        jitterTimer += Time.deltaTime;
+        if (jitterTimer <= jitterDuration / 2)
+        {
+            transform.rotation = Quaternion.Euler(0, 0, originalRotation - jitterAngle * (jitterTimer / (jitterDuration / 2)));
+        }
+        else if (jitterTimer <= jitterDuration)
+        {
+            float t = (jitterTimer - jitterDuration / 2) / (jitterDuration / 2);
+            transform.rotation = Quaternion.Euler(0, 0, originalRotation - jitterAngle * (1 - t));
+        }
+        else
+        {
+            transform.rotation = Quaternion.Euler(0, 0, originalRotation);
+            isJittering = false;
+        }
     }
 
     private void CheckInputClick(Vector2 inputPosition)
@@ -138,9 +147,12 @@ public class SpinnerController : MonoBehaviour
         float anglePerSecond = absAngle / Time.deltaTime;
         float threshold = dragThreshold * angleThresholdMultiplier;
 
+        float minSpeed = 60f;
+        float maxSpeed = 360f;
+
         targetAngularVelocity = anglePerSecond < threshold ?
-            -absAngle * 60f :
-            -absAngle * (120f + Mathf.Clamp01((anglePerSecond - threshold) / threshold) * 240f);
+            -absAngle * minSpeed :
+            -absAngle * (minSpeed + Mathf.Clamp01((anglePerSecond - threshold) / threshold) * (maxSpeed - minSpeed));
 
         if (!isDragging)
         {
@@ -158,7 +170,7 @@ public class SpinnerController : MonoBehaviour
         }
         else
         {
-            if (Mathf.Abs(rb.angularVelocity) < 100f)
+            if (Mathf.Abs(rb.angularVelocity) < spinMinVelocity)
             {
                 rb.angularVelocity *= dampingRate * 0.95f;
             }
@@ -167,7 +179,7 @@ public class SpinnerController : MonoBehaviour
                 rb.angularVelocity *= dampingRate;
             }
 
-            if (Mathf.Abs(rb.angularVelocity) < 40f)
+            if (Mathf.Abs(rb.angularVelocity) < spinStopThreshold)
             {
                 rb.angularVelocity = 0f;
             }

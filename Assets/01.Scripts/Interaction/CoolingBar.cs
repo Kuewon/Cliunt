@@ -6,14 +6,12 @@ public class CoolingBar : MonoBehaviour
 {
     private RectMask2D fillBarMask;
     private RectTransform rectTransform;
-    private float maxGauge;
-    private float currentGauge = 0f;
+    private float maxGauge = 100f;      // ✅ 하드코딩된 최대 게이지 값
+    private float currentGauge = 0f;    // 현재 게이지 값
     private float gaugeHeight;
-
-    private float decreaseInterval;
-    private float decreaseRate;
+    private float decreaseInterval = 0.1f; // ✅ 하드코딩된 감소 간격
+    private float decreaseRate = 0.005f;   // ✅ 하드코딩된 감소 속도
     private float timer = 0f;
-
     private bool isLocked = false;
     public bool IsLocked => isLocked;
 
@@ -24,46 +22,7 @@ public class CoolingBar : MonoBehaviour
         gaugeHeight = rectTransform.rect.height;
         fillBarMask.padding = new Vector4(0, 0, 0, gaugeHeight);
 
-        LoadStatsFromSheet();
-    }
-
-    private void LoadStatsFromSheet()
-    {
-        var stats = GameData.Instance.GetRow("RevolverStats", 0);
-        if (stats != null)
-        {
-            // 구글 시트에서 기본값 로드
-            maxGauge = ConvertToFloat(stats["baseCoolingGauge"]);
-            decreaseRate = ConvertToFloat(stats["decreaseRate"]);
-            decreaseInterval = ConvertToFloat(stats["decreaseInterval"]);
-
-            Debug.Log($"✅ Revolver Stats 로드 완료: maxGauge={maxGauge}, decreaseRate={decreaseRate}, decreaseInterval={decreaseInterval}");
-        }
-        else
-        {
-            Debug.LogError("❌ RevolverStats 데이터를 불러오는데 실패했습니다. 기본값을 사용합니다.");
-            // 기본값 설정
-            maxGauge = 100f;
-            decreaseRate = 0.005f;
-            decreaseInterval = 0.1f;
-        }
-    }
-
-    private float ConvertToFloat(object value)
-    {
-        if (value == null) return 0f;
-
-        if (value is float floatValue)
-            return floatValue;
-
-        if (value is int intValue)
-            return (float)intValue;
-
-        if (float.TryParse(value.ToString(), out float result))
-            return result;
-
-        Debug.LogError($"❌ 값 변환 실패: {value}");
-        return 0f;
+        Debug.Log("✅ CoolingBar 초기화 완료 (하드코딩 적용)");
     }
 
     private void Update()
