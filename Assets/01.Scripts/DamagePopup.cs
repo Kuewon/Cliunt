@@ -1,26 +1,53 @@
-// DamagePopup.cs
 using UnityEngine;
 
 public class DamagePopup : MonoBehaviour
 {
+    [Header("Text Settings")]
+    [SerializeField] private int fontSize = 40;
+    [SerializeField] private float characterSize = 0.1f;
+    [SerializeField] private Color normalColor = Color.yellow;
+    [SerializeField] private Color criticalColor = Color.red;
+    
+    [Header("Animation Settings")]
+    [SerializeField] private float lifetime = 1f;
+    [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float growthDuration = 0.5f;
+    [SerializeField] private float growthSpeed = 0.3f;
+    [SerializeField] private float shrinkSpeed = 1f;
+    [SerializeField] private float fadeSpeed = 2f;
+    
     private TextMesh textMesh;
     private float disappearTimer;
     private Color textColor;
     private Vector3 moveVector;
+    private static Camera mainCamera;
+    private bool isCritical;
 
     private void Awake()
     {
-        // TextMesh 컴포넌트 추가
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+
+        InitializeTextMesh();
+    }
+
+    private void InitializeTextMesh()
+    {
+        // TextMesh 컴포넌트 추가 및 설정
         textMesh = gameObject.AddComponent<TextMesh>();
-        textMesh.fontSize = 40;
+        textMesh.fontSize = fontSize;
         textMesh.alignment = TextAlignment.Center;
         textMesh.anchor = TextAnchor.MiddleCenter;
-        textMesh.characterSize = 0.1f;
+        textMesh.characterSize = characterSize;
 
-        // 정렬을 위한 MeshRenderer 설정
-        MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-        meshRenderer.sortingLayerName = "UI"; // 적절한 Sorting Layer를 설정하세요
-        meshRenderer.sortingOrder = 100;
+        // MeshRenderer 설정
+        if (TryGetComponent(out MeshRenderer meshRenderer))
+        {
+            meshRenderer.sortingLayerName = "UI";
+            meshRenderer.sortingOrder = 100;
+        }
     }
 
     public static DamagePopup Create(Vector3 position, float damageAmount, bool isCritical = false)
@@ -33,49 +60,75 @@ public class DamagePopup : MonoBehaviour
 
     private void Setup(Vector3 position, float damageAmount, bool isCritical)
     {
+        this.isCritical = isCritical;
         transform.position = position + new Vector3(0, 0.5f, 0);
-        transform.rotation = Quaternion.Euler(0, 0, 0); // 카메라를 향하도록
-
-        // 데미지 텍스트 설정
+        
+        // 텍스트 설정
         textMesh.text = damageAmount.ToString("F1");
-        textMesh.color = isCritical ? Color.red : Color.yellow;
-
-        textColor = textMesh.color;
-        disappearTimer = 1f;
-        moveVector = new Vector3(Random.Range(-1f, 1f), 1) * 3f;
-    }
-
-    private void Update()
-    {
-        // 카메라를 향하도록 회전
-        if (Camera.main != null)
+        
+        // 크리티컬이면 더 크게 표시
+        if (isCritical)
         {
-            transform.rotation = Camera.main.transform.rotation;
-        }
-
-        transform.position += moveVector * Time.deltaTime;
-        moveVector -= moveVector * 8f * Time.deltaTime;
-
-        if (disappearTimer > 0.5f)
-        {
-            // 첫 0.5초는 원래 크기
-            transform.localScale += Vector3.one * Time.deltaTime * 0.3f;
+            textMesh.color = criticalColor;
+            transform.localScale *= 1.2f;
+            fontSize = (int)(fontSize * 1.2f);
         }
         else
         {
-            // 그 다음부터 점점 작아짐
-            transform.localScale -= Vector3.one * Time.deltaTime * 1f;
+            textMesh.color = normalColor;
         }
 
+        textColor = textMesh.color;
+        disappearTimer = lifetime;
+        
+        // 크리티컬은 더 빠르게 위로 올라감
+        float speedMultiplier = isCritical ? 1.5f : 1f;
+        moveVector = new Vector3(Random.Range(-1f, 1f), 1) * moveSpeed * speedMultiplier;
+    }
+
+    private void LateUpdate()
+    {
+        if (mainCamera != null)
+        {
+            transform.rotation = mainCamera.transform.rotation;
+        }
+
+        // 이동 처리
+        transform.position += moveVector * Time.deltaTime;
+        moveVector -= moveVector * 8f * Time.deltaTime;
+
+        // 크기 변화
+        if (disappearTimer > lifetime - growthDuration)
+        {
+            float scaleMultiplier = isCritical ? growthSpeed * 1.5f : growthSpeed;
+            transform.localScale += Vector3.one * Time.deltaTime * scaleMultiplier;
+        }
+        else
+        {
+            transform.localScale -= Vector3.one * Time.deltaTime * shrinkSpeed;
+        }
+
+        // 페이드 아웃
         disappearTimer -= Time.deltaTime;
         if (disappearTimer < 0)
         {
-            textColor.a -= Time.deltaTime * 2f;
+            textColor.a -= Time.deltaTime * fadeSpeed;
             textMesh.color = textColor;
+            
             if (textColor.a < 0)
             {
                 Destroy(gameObject);
             }
+        }
+    }
+
+    private void OnValidate()
+    {
+        // 에디터에서 값이 변경될 때 텍스트 메시 업데이트
+        if (textMesh != null)
+        {
+            textMesh.fontSize = fontSize;
+            textMesh.characterSize = characterSize;
         }
     }
 }
