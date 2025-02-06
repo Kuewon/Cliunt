@@ -1,14 +1,16 @@
+using System;
+using System.Collections.Generic;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using UnityEngine;
+using System.IO;
 
 public class GoogleSheetsManager : MonoBehaviour
 {
+    public static event Action OnDataLoadComplete; // 데이터 로드 완료 이벤트
+
     private static readonly string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
     private static readonly string ApplicationName = "Unity Google Sheets Integration";
     private static readonly string SpreadsheetId = "1VyuylG7ABCyohVL_3u1fMNcNEMjCAK3acCOgf42K-3c";
@@ -18,39 +20,68 @@ public class GoogleSheetsManager : MonoBehaviour
     private void Start()
     {
         AuthenticateGoogleSheets();
-        List<string> loadedSheets = LoadAllSheets();
-
-        // 콘솔에 보기 쉽게 시트 개수 및 줄 단위 목록 출력
-        Debug.Log($"✅ Google Sheets에서 {loadedSheets.Count}개의 시트를 불러왔습니다:\n" + FormatSheetList(loadedSheets));
+        LoadAllSheets();
     }
 
+    /// <summary>
+    /// Google Sheets API 인증
+    /// </summary>
     private void AuthenticateGoogleSheets()
     {
         string jsonPath = Path.Combine(Application.persistentDataPath, "tough-forest-450011-r5-9f21fbd2257a.json");
 
         if (!File.Exists(jsonPath))
         {
-            Debug.LogError("❌ JSON Key File not found: " + jsonPath);
+            Debug.LogError($"❌ JSON Key File not found: {jsonPath}");
             return;
         }
 
         GoogleCredential credential;
-        using (var stream = new FileStream(jsonPath, FileMode.Open, FileAccess.Read))
+        try
         {
-            credential = GoogleCredential.FromStream(stream).CreateScoped(Scopes);
-        }
+            using (var stream = new FileStream(jsonPath, FileMode.Open, FileAccess.Read))
+            {
+                credential = GoogleCredential.FromStream(stream).CreateScoped(Scopes);
+            }
 
-        service = new SheetsService(new BaseClientService.Initializer()
+            service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+
+            Debug.Log("✅ Google Sheets API 인증 성공!");
+        }
+        catch (Exception e)
         {
-            HttpClientInitializer = credential,
-            ApplicationName = ApplicationName,
-        });
+            Debug.LogError($"❌ Google Sheets API 인증 중 오류 발생: {e.Message}");
+        }
     }
 
-    private List<string> LoadAllSheets()
+    /// <summary>
+    /// 모든 시트 데이터를 로드
+    /// </summary>
+    private void LoadAllSheets()
     {
+        if (service == null) // ✅ Null 체크 추가
+        {
+            Debug.LogError("❌ Google Sheets API 서비스가 초기화되지 않았습니다. 인증이 먼저 필요합니다.");
+            return;
+        }
+
         var request = service.Spreadsheets.Get(SpreadsheetId);
-        Spreadsheet spreadsheet = request.Execute();
+        Spreadsheet spreadsheet;
+        
+        try
+        {
+            spreadsheet = request.Execute();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ Google Sheets 데이터를 불러오는 중 오류 발생: {e.Message}");
+            return;
+        }
+
         List<string> sheetNames = new List<string>();
 
         foreach (var sheet in spreadsheet.Sheets)
@@ -62,17 +93,37 @@ public class GoogleSheetsManager : MonoBehaviour
             sheetNames.Add(sheetName);
         }
 
-        return sheetNames;
+        Debug.Log($"✅ Google 스프레드시트 데이터 로드 완료! {sheetNames.Count}개의 시트를 불러왔습니다.");
+        foreach (var name in sheetNames)
+        {
+            Debug.Log($"📄 {name}");
+        }
+
+        OnDataLoadComplete?.Invoke(); // ✅ 데이터 로드 완료 이벤트 호출
     }
 
+    /// <summary>
+    /// 개별 시트 데이터를 불러와 GameData에 저장
+    /// </summary>
     private void LoadSheetData(string sheetName)
     {
         string range = $"{sheetName}!A1:Z";
         var request = service.Spreadsheets.Values.Get(SpreadsheetId, range);
-        ValueRange response = request.Execute();
+        ValueRange response;
+
+        try
+        {
+            response = request.Execute();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ {sheetName} 시트 데이터를 불러오는 중 오류 발생: {e.Message}");
+            return;
+        }
 
         if (response.Values == null || response.Values.Count < 4)
         {
+            Debug.LogWarning($"⚠️ '{sheetName}' 시트에 유효한 데이터가 없습니다.");
             return;
         }
 
@@ -115,6 +166,9 @@ public class GoogleSheetsManager : MonoBehaviour
         GameData.Instance.SetSheetData(sheetName, sheetData);
     }
 
+    /// <summary>
+    /// 데이터 타입 변환
+    /// </summary>
     private object ConvertToType(string type, string value)
     {
         switch (type)
@@ -122,23 +176,10 @@ public class GoogleSheetsManager : MonoBehaviour
             case "int":
                 return int.TryParse(value, out int intValue) ? intValue : 0;
             case "float":
-                return float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float floatValue) ? floatValue : 0f;
+                return float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float floatValue) ? floatValue : 0f;
             case "string":
                 return value;
         }
         return null;
-    }
-
-    /// <summary>
-    /// 시트 목록을 "1: PlayerStats", "2: Currency" 형식으로 변환하여 줄 단위로 반환
-    /// </summary>
-    private string FormatSheetList(List<string> sheets)
-    {
-        string formattedList = "";
-        for (int i = 0; i < sheets.Count; i++)
-        {
-            formattedList += $"{i + 1}: {sheets[i]}\n";
-        }
-        return formattedList.TrimEnd(); // 마지막 줄 바꿈 제거
     }
 }
