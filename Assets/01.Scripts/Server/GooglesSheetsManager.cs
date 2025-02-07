@@ -63,7 +63,7 @@ public class GoogleSheetsManager : MonoBehaviour
     /// </summary>
     private void LoadAllSheets()
     {
-        if (service == null) // ✅ Null 체크 추가
+        if (service == null) 
         {
             Debug.LogError("❌ Google Sheets API 서비스가 초기화되지 않았습니다. 인증이 먼저 필요합니다.");
             return;
@@ -71,7 +71,7 @@ public class GoogleSheetsManager : MonoBehaviour
 
         var request = service.Spreadsheets.Get(SpreadsheetId);
         Spreadsheet spreadsheet;
-        
+
         try
         {
             spreadsheet = request.Execute();
@@ -93,7 +93,7 @@ public class GoogleSheetsManager : MonoBehaviour
             sheetNames.Add(sheetName);
         }
 
-        Debug.Log($"✅ Google 스프레드시트 데이터 로드 완료! {sheetNames.Count}개의 시트를 불러왔습니다.");
+        Debug.Log($"✅ Google 스프레드시트 데이터 로드 완료! 총 {sheetNames.Count}개의 시트를 불러왔습니다.");
         foreach (var name in sheetNames)
         {
             Debug.Log($"📄 {name}");
