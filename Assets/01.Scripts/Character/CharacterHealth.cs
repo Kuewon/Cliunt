@@ -117,7 +117,6 @@ public class CharacterHealth : MonoBehaviour
         }
 
         DamagePopup.Create(transform.position, damage);
-        Debug.Log($"🔸 데미지 {damage} 적용됨. 현재 체력: {currentHealth}/{maxHealth}");
 
         if (currentHealth <= 0)
         {
@@ -127,7 +126,6 @@ public class CharacterHealth : MonoBehaviour
 
     private void Die()
     {
-        Debug.Log("💀 캐릭터 사망!");
         // 게임오버 처리나 리스폰 로직을 여기에 추가
     }
 }

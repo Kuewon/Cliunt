@@ -53,9 +53,6 @@ public class EnemyHealth : MonoBehaviour
 
         DamagePopup.Create(transform.position + Vector3.up * 0.5f, damage, isCritical);
 
-        string hitType = isCritical ? "크리티컬" : "일반";
-        Debug.Log($"적이 {hitType} 공격으로 {damage} 데미지를 받았습니다. 남은 체력: {currentHealth}/{maxHealth}");
-
         if (currentHealth <= 0)
         {
             Die();
@@ -91,15 +88,6 @@ public class EnemyHealth : MonoBehaviour
 
     private void Die()
     {
-        if (currentHealth <= -maxHealth * 0.2f)
-        {
-            Debug.Log("💥 치명적인 일격으로 적이 처치되었습니다!");
-        }
-        else
-        {
-            Debug.Log("적이 사망했습니다!");
-        }
-        
         Destroy(gameObject);
     }
 }

@@ -183,11 +183,6 @@ public class CharacterController : MonoBehaviour
             {
                 // isCritical 파라미터 전달 확인
                 enemyHealth.TakeDamage(finalDamage, isCritical);
-
-                if (isCritical)
-                {
-                    Debug.Log($"💥 크리티컬 히트! 데미지: {finalDamage:F1}");
-                }
             }
         }
     }

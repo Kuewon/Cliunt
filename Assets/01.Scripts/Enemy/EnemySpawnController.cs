@@ -55,7 +55,6 @@ public class EnemySpawnController : MonoBehaviour
         Vector2 spawnPosition = new Vector2(spawnX, randomHeight);
         
         GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-        Debug.Log($"적 생성됨 - 위치: ({spawnPosition.x:F1}, {spawnPosition.y:F1})");
     }
 
     private void OnDrawGizmos()
