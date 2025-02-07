@@ -1,7 +1,10 @@
 using UnityEngine;
+using System;
 
 public class EnemyHealth : MonoBehaviour
 {
+    public event Action OnEnemyDeath;
+
     [Header("Health Settings")]
     [SerializeField] private float maxHealth = 100f;
 
@@ -28,6 +31,9 @@ public class EnemyHealth : MonoBehaviour
         }
 
         healthBar = HealthBar.Create(transform, maxHealth);
+        
+        // WaveManager에 이 적을 등록
+        WaveManager.Instance?.RegisterEnemy(this);
     }
 
     public void SetMaxHealth(float newMaxHealth)
@@ -74,7 +80,6 @@ public class EnemyHealth : MonoBehaviour
     {
         isBeingPushed = true;
 
-        // 플레이어 방향으로 밀려나기
         Vector3 playerPosition = GameObject.FindGameObjectWithTag("Player")?.transform.position ?? transform.position;
         Vector3 pushDirection = (transform.position - playerPosition).normalized;
         Vector3 targetPosition = transform.position + pushDirection * criticalHitPushForce;
@@ -83,12 +88,11 @@ public class EnemyHealth : MonoBehaviour
         float pushDuration = 0.2f;
         Vector3 startPosition = transform.position;
 
-        // 밀려나는 동작
         while (elapsed < pushDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / pushDuration;
-            t = 1f - Mathf.Pow(1f - t, 3f); // 이징 함수
+            t = 1f - Mathf.Pow(1f - t, 3f);
 
             transform.position = Vector3.Lerp(startPosition, targetPosition, t);
             yield return null;
@@ -99,6 +103,7 @@ public class EnemyHealth : MonoBehaviour
 
     private void Die()
     {
+        OnEnemyDeath?.Invoke();
         Destroy(gameObject);
     }
 }
