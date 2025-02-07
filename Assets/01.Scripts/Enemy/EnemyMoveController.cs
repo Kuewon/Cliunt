@@ -40,6 +40,14 @@ public class EnemyMoveController : MonoBehaviour
         }
     }
 
+    public void SetStats(float damage, float speed, float movement, float range)
+    {
+        attackDamage = damage;
+        attackInterval = 1f / speed; // 공격 속도를 인터벌로 변환
+        moveSpeed = movement;
+        attackRange = range;
+    }
+
     private void Update()
     {
         if (playerTransform == null) return;
@@ -104,7 +112,7 @@ public class EnemyMoveController : MonoBehaviour
 
         canAttack = false;
     }
- 
+
     // 공격 범위 시각화 (디버그용)
     private void OnDrawGizmosSelected()
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -71,7 +72,7 @@ public class GoogleSheetsManager : MonoBehaviour
 
         var request = service.Spreadsheets.Get(SpreadsheetId);
         Spreadsheet spreadsheet;
-        
+
         try
         {
             spreadsheet = request.Execute();
@@ -179,6 +180,16 @@ public class GoogleSheetsManager : MonoBehaviour
                 return float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float floatValue) ? floatValue : 0f;
             case "string":
                 return value;
+            case "int[]":
+                // 대괄호 제거 및 공백 제거
+                value = value.Trim();
+                if (value.StartsWith("[")) value = value.Substring(1);
+                if (value.EndsWith("]")) value = value.Substring(0, value.Length - 1);
+
+                // 쉼표로 분리하고 각 숫자 파싱
+                return value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => int.TryParse(x.Trim(), out int num) ? num : 0)
+                        .ToArray();
         }
         return null;
     }
