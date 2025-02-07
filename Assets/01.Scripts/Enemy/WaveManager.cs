@@ -83,7 +83,6 @@ public class WaveManager : MonoBehaviour
         if (wavesValue is int[] intArray)
         {
             waveEnemyIndices.Add(intArray);
-            Debug.Log($"Stage {currentStage}: Added wave with {intArray.Length} enemies");
         }
         else
         {
@@ -129,7 +128,6 @@ public class WaveManager : MonoBehaviour
         
         if (currentStage < maxStage)
         {
-            Debug.Log($"Stage {currentStage} 완료! 다음 스테이지로 진행합니다.");
             StartStage(currentStage + 1);
         }
         else
@@ -159,7 +157,6 @@ public class WaveManager : MonoBehaviour
     private IEnumerator SpawnWaveEnemiesSequentially()
     {
         int[] enemyIndices = waveEnemyIndices[currentWaveIndex];
-        Debug.Log($"Stage {currentStage} - Wave {currentWaveIndex + 1} 시작: {enemyIndices.Length}마리 스폰 예정");
 
         foreach (int enemyIndex in enemyIndices)
         {
@@ -168,7 +165,6 @@ public class WaveManager : MonoBehaviour
         }
 
         spawnCoroutine = null;
-        Debug.Log($"Wave {currentWaveIndex + 1} 스폰 완료. 현재 남은 적: {activeEnemies.Count}");
     }
 
     private void SpawnEnemy(int enemyIndex)
