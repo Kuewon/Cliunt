@@ -1,21 +1,35 @@
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 
 public class EnemySpawnController : MonoBehaviour
 {
+    public static EnemySpawnController Instance { get; private set; }
+
     [Header("Spawn Settings")]
     [SerializeField] private GameObject enemyPrefab;
-    [SerializeField] private float spawnInterval = 3f;
-    
-    [Header("Height Range")]
-    [SerializeField] private float minSpawnHeight = 0f;    // 최소 스폰 높이
-    [SerializeField] private float maxSpawnHeight = 2f;    // 최대 스폰 높이
-    
-    [Header("Debug")]
-    [SerializeField] private bool showSpawnRange = true;   // 기즈모로 스폰 범위 표시
 
-    private float timer = 0f;
+    [Header("Height Range")]
+    [SerializeField] private float minSpawnHeight = 0f;
+    [SerializeField] private float maxSpawnHeight = 2f;
+
+    [Header("Debug")]
+    [SerializeField] private bool showSpawnRange = true;
+
     private Camera mainCamera;
     private float spawnX;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void Start()
     {
@@ -23,52 +37,65 @@ public class EnemySpawnController : MonoBehaviour
         CalculateSpawnPosition();
     }
 
-    private void Update()
-    {
-        timer += Time.deltaTime;
-
-        if (timer >= spawnInterval)
-        {
-            SpawnEnemy();
-            timer = 0f;
-        }
-    }
-
     private void CalculateSpawnPosition()
     {
         if (mainCamera != null)
         {
-            // 화면 오른쪽 바깥에서 스폰
             spawnX = mainCamera.ViewportToWorldPoint(new Vector3(1.1f, 0f, 0f)).x;
         }
         else
         {
             Debug.LogWarning("메인 카메라를 찾을 수 없습니다!");
-            spawnX = 10f; // 기본값
+            spawnX = 10f;
         }
     }
 
-    private void SpawnEnemy()
+    public void SpawnEnemyWithStats(
+        Dictionary<string, object> enemyStats,
+        float healthMultiplier,
+        float attackMultiplier,
+        float attackSpeedMultiplier)
     {
-        // minSpawnHeight와 maxSpawnHeight 사이의 랜덤한 높이 생성
-        float randomHeight = Random.Range(minSpawnHeight, maxSpawnHeight);
+        float randomHeight = UnityEngine.Random.Range(minSpawnHeight, maxSpawnHeight);
         Vector2 spawnPosition = new Vector2(spawnX, randomHeight);
-        
+
         GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-        Debug.Log($"적 생성됨 - 위치: ({spawnPosition.x:F1}, {spawnPosition.y:F1})");
+
+        // 체력 설정
+        var health = enemy.GetComponent<EnemyHealth>();
+        if (health != null)
+        {
+            float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
+            health.SetMaxHealth(baseHealth * healthMultiplier);
+        }
+
+        // 이동 및 공격 설정
+        var moveController = enemy.GetComponent<EnemyMoveController>();
+        if (moveController != null)
+        {
+            float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
+            float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
+            float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
+            float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
+
+            moveController.SetStats(
+                baseAttackDamage * attackMultiplier,
+                baseAttackSpeed * attackSpeedMultiplier,
+                movementSpeed,
+                attackRange
+            );
+        }
     }
 
     private void OnDrawGizmos()
     {
         if (!showSpawnRange) return;
 
-        // 스폰 범위를 시각적으로 표시
         Gizmos.color = Color.yellow;
         Vector3 lineStart = new Vector3(spawnX, minSpawnHeight, 0);
         Vector3 lineEnd = new Vector3(spawnX, maxSpawnHeight, 0);
         Gizmos.DrawLine(lineStart, lineEnd);
 
-        // 범위의 시작과 끝을 표시
         float sphereRadius = 0.2f;
         Gizmos.DrawWireSphere(lineStart, sphereRadius);
         Gizmos.DrawWireSphere(lineEnd, sphereRadius);

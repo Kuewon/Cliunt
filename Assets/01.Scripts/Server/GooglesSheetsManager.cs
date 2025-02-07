@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -179,6 +180,23 @@ public class GoogleSheetsManager : MonoBehaviour
                 return float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float floatValue) ? floatValue : 0f;
             case "string":
                 return value;
+            case "int[]":
+                value = value.Trim();
+                if (value.StartsWith("[")) value = value.Substring(1);
+                if (value.EndsWith("]")) value = value.Substring(0, value.Length - 1);
+                return value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => int.TryParse(x.Trim(), out int num) ? num : 0)
+                        .ToArray();
+            case "float[]":
+                value = value.Trim();
+                if (value.StartsWith("[")) value = value.Substring(1);
+                if (value.EndsWith("]")) value = value.Substring(0, value.Length - 1);
+                return value.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => float.TryParse(x.Trim(),
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out float num) ? num : 0f)
+                        .ToArray();
         }
         return null;
     }
