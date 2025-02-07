@@ -2,17 +2,16 @@ using UnityEngine;
 
 public class HammarCollision : MonoBehaviour
 {
-    [SerializeField] private CoolingBar coolingBar;
-    [SerializeField] private float attackPower = 10f;
-    [SerializeField] private int maxHits = 6;
+    public CoolingBar coolingBar;
+    public float attackPower; // 구글
+    public int maxHits = 6; // 지금은 총알의 역할을 대신하고있음. 나중에 bullet으로 바꿔야함.
     private CharacterController characterController;
     private int hitCount = 1;
     private bool isFirstHit = true;
     private bool wasLocked = false;
+    private bool ignoreInitialCollisions = true; // 초기 충돌 무시 변수
 
-    private bool ignoreInitialCollisions = true; // ✅ 초기 충돌 무시 변수
-
-    private void Start()
+    private void Awake()
     {
         if (coolingBar == null)
         {
@@ -23,15 +22,16 @@ public class HammarCollision : MonoBehaviour
         {
             Debug.LogError("CharacterController not found in the scene!");
         }
+    }
 
-        // 🔴 스프레드시트 제거 후 하드코딩 적용
-        attackPower = 10f;
-        maxHits = 6;
+    private void Start()
+    {
+        attackPower = (float)GameData.Instance.GetRow("PlayerUpgrade", 0)["attackPower"];
+        
     }
 
     private void Update()
     {
-        // ✅ 첫 번째 프레임이 지나면 충돌 감지 활성화
         if (ignoreInitialCollisions)
         {
             ignoreInitialCollisions = false;
@@ -40,7 +40,6 @@ public class HammarCollision : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // ✅ 초기 충돌 무시
         if (ignoreInitialCollisions) return;
 
         if (other.CompareTag("SpinnerCircle"))

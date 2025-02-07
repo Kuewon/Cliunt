@@ -517,6 +517,11 @@ MonoBehaviour:
   dragThreshold: 3
   smoothSpeed: 10
   dampingRate: 0.995
+  angleThresholdMultiplier: 3
+  baseSpinSpeed: 0
+  baseMaxSpinSpeed: 0
+  spinMinVelocity: 100
+  spinStopThreshold: 40
 --- !u!58 &424429826
 CircleCollider2D:
   m_ObjectHideFlags: 0

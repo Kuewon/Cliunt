@@ -2,16 +2,15 @@
 
 public class SpinnerController : MonoBehaviour
 {
-    [SerializeField] private float edgeThickness = 0.7f;
-    [SerializeField] private float dragThreshold = 3f;
-    [SerializeField] private float smoothSpeed = 10f;
-    [SerializeField][Range(0.9f, 0.9999f)] private float dampingRate = 0.995f;
-
-    private float angleThresholdMultiplier = 3f;
-    private float baseSpinSpeed;
-    private float baseMaxSpinSpeed;
-    private float spinMinVelocity;
-    private float spinStopThreshold = 40f;
+    public float edgeThickness = 0.7f; // 스피너 외곽부터 터치 범위
+    public float dragThreshold = 3f; // 마우스를 얼마나 빠르게 움직여야 스피너 반응하는지(클수록 둔해짐,작을수록 민감해짐)
+    public float smoothSpeed = 10f; // 부드럽게 회전하게 해주는 코드
+    public float dampingRate = 0.995f; // 마찰력(값이 1에가까울수록 천천히 감소, 0에 가까울수록 빠르게 멈춤)
+    public float angleThresholdMultiplier = 3f; // 드래그할 때 회전 속도 계산 시 기준이 되는 값이라는데 이해 못하겠음
+    public float baseSpinSpeed; // 구글
+    public float baseMaxSpinSpeed; // 구글
+    public float spinMinVelocity = 100f; // 스피너가 일정 속도 이하로 떨어지면 감속이 더 강해지는 임계 속도, 낮아질수록 더 빠르게 멈춤
+    public float spinStopThreshold = 40f; // 스피너가 완전히 멈추는 기준 속도
 
     private Rigidbody2D rb;
     private CircleCollider2D circleCollider;
@@ -25,11 +24,11 @@ public class SpinnerController : MonoBehaviour
     private bool wasLocked = false;
     private float originalRotation;
     private bool isJittering = false;
-    private float jitterAngle = 5f;
-    private float jitterDuration = 0.1f;
-    private float jitterTimer = 0f;
+    private float jitterAngle = 5f; // 게이지 다 차고, 움직이려 할 때 깔짝거림 최대 각도
+    private float jitterDuration = 0.1f; // 깔짝거림 지속시간
+    private float jitterTimer = 0f; // 깔짝거림 효과의 경과 시간을 추적하는 변수라는데 이해 못하겠음.
 
-    private void Start()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         circleCollider = GetComponent<CircleCollider2D>();
@@ -39,13 +38,13 @@ public class SpinnerController : MonoBehaviour
 
         rb.angularDrag = 0;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+    }
 
-        // 🔴 하드코딩된 값으로 설정
-        baseSpinSpeed = 0f;
-        baseMaxSpinSpeed = 5f;
-        spinMinVelocity = 100f;
+    private void Start()
+    {
+        baseSpinSpeed = (float)GameData.Instance.GetRow("RevolverStats", 0)["baseSpinSpeed"];
+        baseMaxSpinSpeed = (float)GameData.Instance.GetRow("RevolverStats", 0)["baseMaxSpinSpeed"];
 
-        Debug.Log($"✅ SpinnerController 초기화 완료: baseSpinSpeed={baseSpinSpeed}, baseMaxSpinSpeed={baseMaxSpinSpeed}, spinMinVelocity={spinMinVelocity}");
     }
 
     private void Update()
