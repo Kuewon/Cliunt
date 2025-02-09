@@ -131,11 +131,11 @@ public class CharacterHealth : MonoBehaviour
         var gold = FindObjectOfType<GameManager>().totalGold;
         PlayerPrefs.SetFloat("USER_GOLD", gold);
 
-#if UNITY_EDITOR
-        EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+//#if UNITY_EDITOR
+//        EditorApplication.isPlaying = false;
+//#else
+//        Application.Quit();
+//#endif
 
     }
 }
