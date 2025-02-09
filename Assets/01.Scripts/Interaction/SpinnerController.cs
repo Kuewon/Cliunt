@@ -18,7 +18,7 @@ public class SpinnerController : MonoBehaviour
     private Vector2 spinnerCenter;
     private Vector2 lastMousePosition;
     private float targetAngularVelocity;
-    private bool isDragging;
+    public bool isDragging;
 
     private CoolingBar coolingBar;
     private bool wasLocked = false;
@@ -44,7 +44,6 @@ public class SpinnerController : MonoBehaviour
     {
         baseSpinSpeed = (float)GameData.Instance.GetRow("RevolverStats", 0)["baseSpinSpeed"];
         baseMaxSpinSpeed = (float)GameData.Instance.GetRow("RevolverStats", 0)["baseMaxSpinSpeed"];
-
     }
 
     private void Update()
@@ -86,13 +85,6 @@ public class SpinnerController : MonoBehaviour
             return;
         }
 
-        if (Input.GetMouseButtonDown(0))
-            CheckInputClick(inputPosition);
-        else if (Input.GetMouseButton(0) && isDragging)
-            HandleDrag(inputPosition);
-        else if (Input.GetMouseButtonUp(0))
-            isDragging = false;
-
         ApplyRotation();
     }
 
@@ -122,19 +114,21 @@ public class SpinnerController : MonoBehaviour
         }
     }
 
-    private void CheckInputClick(Vector2 inputPosition)
+    
+    public void CheckInputClick(Vector2 inputPosition)
     {
-        float radius = circleCollider.radius * transform.localScale.x;
-        if (Vector2.Distance(inputPosition, transform.position) <= radius &&
-            Vector2.Distance(inputPosition, transform.position) >= radius * (1 - edgeThickness))
-        {
+       // float radius = circleCollider.radius * transform.localScale.x;
+       // if (Vector2.Distance(inputPosition, transform.position) <= radius &&
+       //     Vector2.Distance(inputPosition, transform.position) >= radius * (1 - edgeThickness))
+       // {
             isDragging = true;
             lastMousePosition = inputPosition;
             spinnerCenter = transform.position;
-        }
+       // }
     }
 
-    private void HandleDrag(Vector2 currentPosition)
+    
+    public void HandleDrag(Vector2 currentPosition)
     {
         if (Time.deltaTime <= 0) return;
 
@@ -183,5 +177,11 @@ public class SpinnerController : MonoBehaviour
                 rb.angularVelocity = 0f;
             }
         }
+    }
+
+    
+    public void OnDragEnd()
+    {
+        isDragging = false;
     }
 }
