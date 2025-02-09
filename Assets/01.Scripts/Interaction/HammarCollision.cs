@@ -1,5 +1,4 @@
 using UnityEngine;
-
 public class HammarCollision : MonoBehaviour
 {
     public CoolingBar coolingBar;
@@ -27,7 +26,6 @@ public class HammarCollision : MonoBehaviour
     private void Start()
     {
         attackPower = (float)GameData.Instance.GetRow("PlayerUpgrade", 0)["attackPower"];
-        
     }
 
     private void Update()
@@ -36,20 +34,30 @@ public class HammarCollision : MonoBehaviour
         {
             ignoreInitialCollisions = false;
         }
+
+        if (coolingBar != null)
+        {
+            if (coolingBar.IsLocked)
+            {
+                wasLocked = true;
+            }
+            else if (wasLocked && !coolingBar.IsLocked)
+            {
+                wasLocked = false;
+                isFirstHit = true;
+                hitCount = 1;
+            }
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (ignoreInitialCollisions) return;
-
         if (other.CompareTag("SpinnerCircle"))
         {
             if (!wasLocked)
             {
-                if (hitCount <= maxHits)
-                {
-                    Debug.Log($"Hit {hitCount}");
-                }
+                Debug.Log($"Hit {hitCount}");  // hitCount <= maxHits 조건 제거해서 hit카운트 증가하는지 확인용도
 
                 if (!isFirstHit)
                 {
@@ -62,14 +70,11 @@ public class HammarCollision : MonoBehaviour
                         characterController.TriggerManualAttack();
                     }
                 }
-
                 if (isFirstHit)
                 {
                     isFirstHit = false;
                 }
-
                 hitCount++;
-
                 if (hitCount > maxHits)
                 {
                     hitCount = 1;
