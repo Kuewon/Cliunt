@@ -12,7 +12,7 @@ public class DragAreaController : MonoBehaviour
 
     private void OnMouseDrag()
     {
-     
+
         if (spinnerController.isDragging)
         {
             Vector2 currentPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
