@@ -24,6 +24,8 @@ public class WaveManager : MonoBehaviour
     private Coroutine spawnCoroutine;
     private HashSet<EnemyHealth> activeEnemies = new HashSet<EnemyHealth>();
 
+    [SerializeField] private float _enemyDropGoldMultiplier = 1.0f;
+    public float enemyDropGoldMultiplier => _enemyDropGoldMultiplier;
     // 스테이지 변경 이벤트
     public event Action<int> OnStageChanged;
     public event Action OnAllStagesCompleted;
@@ -77,6 +79,8 @@ public class WaveManager : MonoBehaviour
         enemyAttackMultiplier = Convert.ToSingle(waveData["enemyAttackMultiplier"]);
         enemyHealthMultiplier = Convert.ToSingle(waveData["enemyHealthMultiplier"]);
         enemyAttackSpeedMultiplier = Convert.ToSingle(waveData["enemyAttackSpeedMultiplier"]);
+
+        _enemyDropGoldMultiplier = Convert.ToSingle(waveData["enemyGoldMultiplier"]);
 
         var wavesValue = waveData["waves"];
         

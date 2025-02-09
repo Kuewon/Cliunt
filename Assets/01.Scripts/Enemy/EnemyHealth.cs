@@ -104,6 +104,11 @@ public class EnemyHealth : MonoBehaviour
     private void Die()
     {
         OnEnemyDeath?.Invoke();
+        var GM = FindObjectOfType<GameManager>();
+        var WM = FindObjectOfType<WaveManager>();
+        var gold = gameObject.GetComponent<EnemyMoveController>()._enemyDropGold;
+        int temp = Mathf.CeilToInt(gold * WM.enemyDropGoldMultiplier);
+        GM.OnUpdateGold(temp);
         Destroy(gameObject);
     }
 }
