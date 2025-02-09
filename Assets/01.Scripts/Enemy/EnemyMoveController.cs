@@ -7,6 +7,9 @@ public class EnemyMoveController : MonoBehaviour
     [SerializeField] private float attackInterval = 1f;
     [SerializeField] private float attackDamage = 10f;
 
+    [SerializeField] private float enemyDropGold = 10.0f;
+    public float _enemyDropGold => enemyDropGold;
+
     private Animator animator;
     private Transform playerTransform;
     private SpriteRenderer spriteRenderer;
@@ -40,12 +43,13 @@ public class EnemyMoveController : MonoBehaviour
         }
     }
 
-    public void SetStats(float damage, float speed, float movement, float range)
+    public void SetStats(float damage, float speed, float movement, float range, float gold)
     {
         attackDamage = damage;
         attackInterval = 1f / speed; // 공격 속도를 인터벌로 변환
         moveSpeed = movement;
         attackRange = range;
+        enemyDropGold = gold;
     }
 
     private void Update()

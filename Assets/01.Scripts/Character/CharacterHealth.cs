@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 
 public class CharacterHealth : MonoBehaviour
@@ -127,5 +128,14 @@ public class CharacterHealth : MonoBehaviour
     private void Die()
     {
         // 게임오버 처리나 리스폰 로직을 여기에 추가
+        var gold = FindObjectOfType<GameManager>().totalGold;
+        PlayerPrefs.SetFloat("USER_GOLD", gold);
+
+#if UNITY_EDITOR
+        EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+
     }
 }

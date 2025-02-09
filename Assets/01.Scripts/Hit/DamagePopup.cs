@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class DamagePopup : MonoBehaviour
@@ -7,7 +8,7 @@ public class DamagePopup : MonoBehaviour
     [SerializeField] private float characterSize = 0.1f;
     [SerializeField] private Color normalColor = Color.yellow;
     [SerializeField] private Color criticalColor = Color.red;
-    
+
     [Header("Animation Settings")]
     [SerializeField] private float lifetime = 1f;
     [SerializeField] private float moveSpeed = 3f;
@@ -35,15 +36,16 @@ public class DamagePopup : MonoBehaviour
 
     private void InitializeTextMesh()
     {
-        // TextMesh 컴포넌트 추가 및 설정
         textMesh = gameObject.AddComponent<TextMesh>();
+
+        // TextMesh 컴포넌트 추가 및 설정
         textMesh.fontSize = fontSize;
         textMesh.alignment = TextAlignment.Center;
         textMesh.anchor = TextAnchor.MiddleCenter;
         textMesh.characterSize = characterSize;
 
         // MeshRenderer 설정
-        if (TryGetComponent(out MeshRenderer meshRenderer))
+        if (TryGetComponent(out MeshRenderer meshRenderer)) 
         {
             meshRenderer.sortingLayerName = "UI";
             meshRenderer.sortingOrder = 100;
@@ -128,7 +130,7 @@ public class DamagePopup : MonoBehaviour
         if (textMesh != null)
         {
             textMesh.fontSize = fontSize;
-            textMesh.characterSize = characterSize;
+            //textMesh.characterSize = characterSize;
         }
     }
 }

@@ -16,6 +16,9 @@ public class EnemySpawnController : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool showSpawnRange = true;
 
+    [SerializeField] private float _enemyDropGold = 0;
+    public float enemyDropGold => _enemyDropGold;
+
     private Camera mainCamera;
     private float spawnX;
 
@@ -77,13 +80,16 @@ public class EnemySpawnController : MonoBehaviour
             float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
             float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
             float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
+            float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
 
             moveController.SetStats(
                 baseAttackDamage * attackMultiplier,
                 baseAttackSpeed * attackSpeedMultiplier,
                 movementSpeed,
-                attackRange
+                attackRange,
+                gold
             );
+
         }
     }
 
