@@ -23,7 +23,7 @@ public class CharacterHealth : MonoBehaviour
     {
         // 구글 시트 데이터 로드 완료 이벤트 구독
         GoogleSheetsManager.OnDataLoadComplete += InitializeHealth;
-        
+
         // GameData가 이미 초기화되어 있는지 확인
         object baseHealthValue = GameData.Instance.GetValue("PlayerStats", 0, "baseHealth");
         if (baseHealthValue != null)
@@ -56,16 +56,16 @@ public class CharacterHealth : MonoBehaviour
             {
                 maxHealth = newHealth;
                 currentHealth = maxHealth;
-                
+
                 // 이전 체력바가 있다면 제거하고 새로 생성
                 if (healthBar != null)
                 {
                     Destroy(healthBar.gameObject);
                 }
-                
-                healthBar = HealthBar.Create(transform, maxHealth);
+
+                healthBar = HealthBar.CreatePlayerHealthBar(transform, maxHealth);
                 isInitialized = true;
-                
+
                 Debug.Log($"✅ PlayerStats에서 체력 데이터를 성공적으로 로드했습니다. 기본 체력: {maxHealth}");
             }
             else
@@ -86,13 +86,13 @@ public class CharacterHealth : MonoBehaviour
 
         maxHealth = 100f;
         currentHealth = maxHealth;
-        
+
         if (healthBar != null)
         {
             Destroy(healthBar.gameObject);
         }
-        
-        healthBar = HealthBar.Create(transform, maxHealth);
+
+        healthBar = HealthBar.CreatePlayerHealthBar(transform, maxHealth);
         Debug.Log("ℹ️ 기본 체력 값으로 초기화: " + maxHealth);
     }
 
@@ -106,7 +106,7 @@ public class CharacterHealth : MonoBehaviour
 
         if (healthBar == null)
         {
-            healthBar = HealthBar.Create(transform, maxHealth);
+            healthBar = HealthBar.CreatePlayerHealthBar(transform, maxHealth);
         }
 
         currentHealth = Mathf.Max(0, currentHealth - damage);
@@ -131,11 +131,11 @@ public class CharacterHealth : MonoBehaviour
         var gold = FindObjectOfType<GameManager>().totalGold;
         PlayerPrefs.SetFloat("USER_GOLD", gold);
 
-//#if UNITY_EDITOR
-//        EditorApplication.isPlaying = false;
-//#else
-//        Application.Quit();
-//#endif
+        //#if UNITY_EDITOR
+        //        EditorApplication.isPlaying = false;
+        //#else
+        //        Application.Quit();
+        //#endif
 
     }
 }
