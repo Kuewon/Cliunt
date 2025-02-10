@@ -4,7 +4,7 @@ public class HitEffect : MonoBehaviour
 {
     private SpriteRenderer spriteRenderer;
     private float flashTime = 0.1f;
-    private float criticalFlashTime = 0.2f; // 크리티컬은 더 오래 지속
+    private float criticalFlashTime = 0.2f;
     private float flashTimer = 0f;
     private Color originalColor;
     private bool isCriticalFlashing = false;
@@ -20,7 +20,7 @@ public class HitEffect : MonoBehaviour
 
     public void PlayHitEffect()
     {
-        if (spriteRenderer != null && !isCriticalFlashing) // 크리티컬 진행 중에는 일반 히트 무시
+        if (spriteRenderer != null && !isCriticalFlashing)
         {
             spriteRenderer.color = Color.white;
             flashTimer = flashTime;
@@ -36,9 +36,13 @@ public class HitEffect : MonoBehaviour
             spriteRenderer.color = Color.red;
             flashTimer = criticalFlashTime;
             StartCoroutine(FlashRoutine(Color.red, criticalFlashTime));
-            
-            // 화면 흔들기 효과 추가
-            StartCoroutine(ShakeCamera(0.1f, 0.2f));
+
+            // 태그로 Top_Ingame 찾기
+            GameObject topIngame = GameObject.FindGameObjectWithTag("TopIngame");
+            if (topIngame != null)
+            {
+                StartCoroutine(ShakeCanvas(topIngame.GetComponent<RectTransform>(), 0.2f, 0.2f));
+            }
         }
     }
 
@@ -48,11 +52,10 @@ public class HitEffect : MonoBehaviour
         {
             flashTimer -= Time.deltaTime;
             float lerp = flashTimer / duration;
-            
-            // 크리티컬일 경우 색상을 더 강렬하게
+
             if (isCriticalFlashing)
             {
-                float intensity = 1f + Mathf.Sin(Time.time * 30f) * 0.2f; // 깜빡이는 효과
+                float intensity = 1f + Mathf.Sin(Time.time * 30f) * 0.2f;
                 Color intensifiedColor = flashColor * intensity;
                 spriteRenderer.color = Color.Lerp(originalColor, intensifiedColor, lerp);
             }
@@ -60,31 +63,31 @@ public class HitEffect : MonoBehaviour
             {
                 spriteRenderer.color = Color.Lerp(originalColor, flashColor, lerp);
             }
-            
+
             yield return null;
         }
-        
+
         spriteRenderer.color = originalColor;
         isCriticalFlashing = false;
     }
 
-    private System.Collections.IEnumerator ShakeCamera(float duration, float magnitude)
+    private System.Collections.IEnumerator ShakeCanvas(RectTransform canvasRect, float duration, float magnitude)
     {
-        if (Camera.main == null) yield break;
+        if (canvasRect == null) yield break;
 
-        Vector3 originalPos = Camera.main.transform.localPosition;
+        Vector2 originalPos = canvasRect.anchoredPosition;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
-            float x = Random.Range(-1f, 1f) * magnitude;
-            float y = Random.Range(-1f, 1f) * magnitude;
+            float x = Random.Range(-1f, 1f) * magnitude * 30f;
+            float y = Random.Range(-1f, 1f) * magnitude * 30f;
 
-            Camera.main.transform.localPosition = new Vector3(x, y, originalPos.z);
+            canvasRect.anchoredPosition = new Vector2(originalPos.x + x, originalPos.y + y);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        Camera.main.transform.localPosition = originalPos;
+        canvasRect.anchoredPosition = originalPos;
     }
 }

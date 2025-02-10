@@ -30,8 +30,8 @@ public class EnemyHealth : MonoBehaviour
             hitEffect = gameObject.AddComponent<HitEffect>();
         }
 
-        healthBar = HealthBar.Create(transform, maxHealth);
-        
+        healthBar = HealthBar.CreateEnemyHealthBar(transform, maxHealth);
+
         // WaveManager에 이 적을 등록
         WaveManager.Instance?.RegisterEnemy(this);
     }
