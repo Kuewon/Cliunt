@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI;  // Image를 사용하기 위해 추가
+using UnityEngine.UI;
 
 public class EnemyMoveController : MonoBehaviour
 {
@@ -13,17 +13,22 @@ public class EnemyMoveController : MonoBehaviour
 
     private Animator animator;
     private Transform playerTransform;
-    private Image image;  // SpriteRenderer 대신 Image 사용
+    private Image image;
     private float attackTimer;
     private bool canAttack = true;
+    private RectTransform rectTransform;
+
+    // 새로운 변수들
+    private Vector2 constantMovementDirection = Vector2.left;
+    private float originalXPosition;
+    private bool isWithinAttackArea = false;
 
     private void Awake()
     {
-        // Awake에서 컴포넌트들을 가져옵니다
         animator = GetComponent<Animator>();
-        image = GetComponent<Image>();  // Image 컴포넌트 가져오기
+        image = GetComponent<Image>();
+        rectTransform = GetComponent<RectTransform>();
 
-        // 컴포넌트가 없다면 경고 메시지를 출력합니다
         if (animator == null)
             Debug.LogWarning("Animator component is missing on the enemy!");
         if (image == null)
@@ -32,7 +37,6 @@ public class EnemyMoveController : MonoBehaviour
 
     private void Start()
     {
-        // Start에서는 플레이어만 찾습니다
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -42,12 +46,14 @@ public class EnemyMoveController : MonoBehaviour
         {
             Debug.LogError("Player with tag 'Player' not found in the scene!");
         }
+
+        originalXPosition = rectTransform.anchoredPosition.x;
     }
 
     public void SetStats(float damage, float speed, float movement, float range, float gold)
     {
         attackDamage = damage;
-        attackInterval = 1f / speed; // 공격 속도를 인터벌로 변환
+        attackInterval = 1f / speed;
         moveSpeed = movement;
         attackRange = range;
         enemyDropGold = gold;
@@ -57,44 +63,37 @@ public class EnemyMoveController : MonoBehaviour
     {
         if (playerTransform == null) return;
 
-        // 플레이어 방향으로 이동
-        Vector2 direction = (playerTransform.position - transform.position).normalized;
+        // 항상 왼쪽으로 이동
+        Vector2 currentPosition = rectTransform.anchoredPosition;
+        Vector2 newPosition = currentPosition + (constantMovementDirection * moveSpeed * Time.deltaTime);
+        rectTransform.anchoredPosition = newPosition;
 
-        // 플레이어와의 거리 계산
-        float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+        // 플레이어와의 거리 계산 (X축만 고려)
+        float distanceToPlayer = Mathf.Abs(rectTransform.anchoredPosition.x - playerTransform.position.x);
 
-        // 이미지 방향 설정 (flipX 대신 scale 사용)
+        // 적 방향 설정 (항상 왼쪽을 바라봄)
         Vector3 scale = transform.localScale;
-        if (direction.x < 0)
-        {
-            scale.x = -Mathf.Abs(scale.x);
-        }
-        else
-        {
-            scale.x = Mathf.Abs(scale.x);
-        }
+        scale.x = -Mathf.Abs(scale.x);
         transform.localScale = scale;
 
-        if (distanceToPlayer > attackRange)
+        // 걷는 애니메이션 처리
+        if (animator != null)
         {
-            // 공격 범위 밖이면 이동
-            transform.Translate(direction * moveSpeed * Time.deltaTime);
-            if (animator != null)
-            {
-                animator.SetBool("IsWalking", true);
-            }
+            animator.SetBool("IsWalking", true);
         }
-        else
+
+        // 공격 범위 체크 및 공격 처리
+        if (distanceToPlayer <= attackRange && !isWithinAttackArea)
         {
-            // 공격 범위 안이면 공격
-            if (animator != null)
-            {
-                animator.SetBool("IsWalking", false);
-            }
+            isWithinAttackArea = true;
             if (canAttack)
             {
                 Attack();
             }
+        }
+        else if (distanceToPlayer > attackRange)
+        {
+            isWithinAttackArea = false;
         }
 
         // 공격 쿨다운 관리
@@ -107,17 +106,21 @@ public class EnemyMoveController : MonoBehaviour
                 attackTimer = 0f;
             }
         }
+
+        // 공격 범위 안에 있을 때 계속 공격
+        if (isWithinAttackArea && canAttack)
+        {
+            Attack();
+        }
     }
 
     private void Attack()
     {
-        // 애니메이션 트리거 설정
         if (animator != null)
         {
             animator.SetTrigger("Attack");
         }
 
-        // 플레이어에게 데미지 전달
         CharacterHealth playerHealth = playerTransform.GetComponent<CharacterHealth>();
         if (playerHealth != null)
         {
@@ -127,7 +130,6 @@ public class EnemyMoveController : MonoBehaviour
         canAttack = false;
     }
 
-    // 공격 범위 시각화 (디버그용)
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 851153076251799691}
   - component: {fileID: -8280577799319750555}
   - component: {fileID: 1306181703555546097}
-  - component: {fileID: 6492824542710699434}
+  - component: {fileID: -3154331609495051222}
   - component: {fileID: 4281212759350656330}
   - component: {fileID: 2172926305830621427}
   - component: {fileID: 6014108287479932805}
@@ -93,7 +93,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &6492824542710699434
+--- !u!114 &-3154331609495051222
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
