@@ -10,7 +10,7 @@ public class SpinnerController : MonoBehaviour
     public float baseSpinSpeed; // 구글
     public float baseMaxSpinSpeed; // 구글
     public float spinMinVelocity = 100f; // 스피너가 일정 속도 이하로 떨어지면 감속이 더 강해지는 임계 속도, 낮아질수록 더 빠르게 멈춤
-    public float spinStopThreshold = 40f; // 스피너가 완전히 멈추는 기준 속도
+    public float spinStopThreshold = 40f; // 스피너가 완전히 멈추는 기준 속도 지금 40에서 완전히 멈춤
 
     private Rigidbody2D rb;
     private CircleCollider2D circleCollider;
@@ -20,8 +20,8 @@ public class SpinnerController : MonoBehaviour
     private float targetAngularVelocity;
     public bool isDragging;
 
-    private CoolingBar coolingBar;
-    private bool wasLocked = false;
+    private CoolingBar coolingBar; // 냉각 게이지를 조작하는 변수
+    private bool wasLocked = false; // 게이지가 가득차서 잠금 상태인지 확인
     private float originalRotation;
     private bool isJittering = false;
     private float jitterAngle = 5f; // 게이지 다 차고, 움직이려 할 때 깔짝거림 최대 각도
@@ -114,20 +114,20 @@ public class SpinnerController : MonoBehaviour
         }
     }
 
-    
+
     public void CheckInputClick(Vector2 inputPosition)
     {
-       // float radius = circleCollider.radius * transform.localScale.x;
-       // if (Vector2.Distance(inputPosition, transform.position) <= radius &&
-       //     Vector2.Distance(inputPosition, transform.position) >= radius * (1 - edgeThickness))
-       // {
-            isDragging = true;
-            lastMousePosition = inputPosition;
-            spinnerCenter = transform.position;
-       // }
+        // float radius = circleCollider.radius * transform.localScale.x;
+        // if (Vector2.Distance(inputPosition, transform.position) <= radius &&
+        //     Vector2.Distance(inputPosition, transform.position) >= radius * (1 - edgeThickness))
+        // {
+        isDragging = true;
+        lastMousePosition = inputPosition;
+        spinnerCenter = transform.position;
+        // }
     }
 
-    
+
     public void HandleDrag(Vector2 currentPosition)
     {
         if (Time.deltaTime <= 0) return;
@@ -179,7 +179,7 @@ public class SpinnerController : MonoBehaviour
         }
     }
 
-    
+
     public void OnDragEnd()
     {
         isDragging = false;
