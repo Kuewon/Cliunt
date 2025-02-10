@@ -5,6 +5,9 @@ public class EnemyHealth : MonoBehaviour
 {
     public event Action OnEnemyDeath;
 
+    [Header("Components")]
+    [SerializeField] private HealthBar healthBar;  // Inspector에서 할당
+
     [Header("Health Settings")]
     [SerializeField] private float maxHealth = 100f;
 
@@ -15,7 +18,6 @@ public class EnemyHealth : MonoBehaviour
 
     private float currentHealth;
     private HitEffect hitEffect;
-    private HealthBar healthBar;
     private Vector3 originalPosition;
     private bool isBeingPushed = false;
 
@@ -30,9 +32,15 @@ public class EnemyHealth : MonoBehaviour
             hitEffect = gameObject.AddComponent<HitEffect>();
         }
 
-        healthBar = HealthBar.CreateEnemyHealthBar(transform, maxHealth);
+        if (healthBar != null)
+        {
+            healthBar.Setup(maxHealth);
+        }
+        else
+        {
+            Debug.LogError("HealthBar가 할당되지 않았습니다. Inspector에서 할당해주세요.");
+        }
 
-        // WaveManager에 이 적을 등록
         WaveManager.Instance?.RegisterEnemy(this);
     }
 
@@ -50,7 +58,11 @@ public class EnemyHealth : MonoBehaviour
     public void TakeDamage(float damage, bool isCritical = false)
     {
         currentHealth = Mathf.Max(0, currentHealth - damage);
-        healthBar.UpdateHealth(currentHealth);
+        
+        if (healthBar != null)
+        {
+            healthBar.UpdateHealth(currentHealth);
+        }
 
         if (hitEffect != null)
         {
@@ -109,6 +121,7 @@ public class EnemyHealth : MonoBehaviour
         var gold = gameObject.GetComponent<EnemyMoveController>()._enemyDropGold;
         int temp = Mathf.CeilToInt(gold * WM.enemyDropGoldMultiplier);
         GM.OnUpdateGold(temp);
+
         Destroy(gameObject);
     }
 }

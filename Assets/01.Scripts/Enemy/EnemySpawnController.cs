@@ -10,8 +10,9 @@ public class EnemySpawnController : MonoBehaviour
     [SerializeField] private GameObject enemyPrefab;
 
     [Header("Height Range")]
-    [SerializeField] private float minSpawnHeight = 0f;
-    [SerializeField] private float maxSpawnHeight = 2f;
+    [SerializeField] private float minSpawnHeightPercentage = 0f;
+    [SerializeField] private float maxSpawnHeightPercentage = 0.7f;
+    [SerializeField] private float spawnXOffsetPercentage = 1.1f;
 
     [Header("Debug")]
     [SerializeField] private bool showSpawnRange = true;
@@ -19,8 +20,8 @@ public class EnemySpawnController : MonoBehaviour
     [SerializeField] private float _enemyDropGold = 0;
     public float enemyDropGold => _enemyDropGold;
 
+    private RectTransform canvasRect;
     private Camera mainCamera;
-    private float spawnX;
 
     private void Awake()
     {
@@ -36,21 +37,47 @@ public class EnemySpawnController : MonoBehaviour
 
     private void Start()
     {
+        GameObject topIngame = GameObject.FindGameObjectWithTag("TopIngame");
+        if (topIngame == null)
+        {
+            Debug.LogError("TopIngame 태그를 가진 오브젝트를 찾을 수 없습니다!");
+            return;
+        }
+
+        canvasRect = topIngame.GetComponent<RectTransform>();
+        if (canvasRect == null)
+        {
+            Debug.LogError("TopIngame 오브젝트에 RectTransform 컴포넌트가 없습니다!");
+            return;
+        }
+
         mainCamera = Camera.main;
-        CalculateSpawnPosition();
+        if (mainCamera == null)
+        {
+            Debug.LogError("Main Camera를 찾을 수 없습니다!");
+            return;
+        }
     }
 
-    private void CalculateSpawnPosition()
+    private Vector2 GetSpawnPosition()
     {
-        if (mainCamera != null)
-        {
-            spawnX = mainCamera.ViewportToWorldPoint(new Vector3(1.1f, 0f, 0f)).x;
-        }
-        else
-        {
-            Debug.LogWarning("메인 카메라를 찾을 수 없습니다!");
-            spawnX = 10f;
-        }
+        if (canvasRect == null || mainCamera == null) return Vector2.zero;
+
+        // 캔버스의 크기와 위치 정보 가져오기
+        Rect canvasRectSize = canvasRect.rect;
+        Vector2 canvasCenter = canvasRect.position;
+        
+        // 스폰 X 위치 계산 (캔버스 오른쪽 끝 기준)
+        float rightEdgeX = canvasCenter.x + (canvasRectSize.width * 0.5f);
+        float spawnX = rightEdgeX + (canvasRectSize.width * (spawnXOffsetPercentage - 1f));
+
+        // 높이 범위 계산
+        float minY = canvasCenter.y + (canvasRectSize.height * (-0.5f + minSpawnHeightPercentage));
+        float maxY = canvasCenter.y + (canvasRectSize.height * (-0.5f + maxSpawnHeightPercentage));
+        float randomY = UnityEngine.Random.Range(minY, maxY);
+
+        Debug.Log($"Spawn Position - X: {spawnX}, Y: {randomY}");
+        return new Vector2(spawnX, randomY);
     }
 
     public void SpawnEnemyWithStats(
@@ -59,10 +86,14 @@ public class EnemySpawnController : MonoBehaviour
         float attackMultiplier,
         float attackSpeedMultiplier)
     {
-        float randomHeight = UnityEngine.Random.Range(minSpawnHeight, maxSpawnHeight);
-        Vector2 spawnPosition = new Vector2(spawnX, randomHeight);
+        if (canvasRect == null) return;
 
+        // 스폰 위치 계산
+        Vector2 spawnPosition = GetSpawnPosition();
+
+        // 적 생성
         GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        enemy.transform.SetParent(canvasRect, false);
 
         // 체력 설정
         var health = enemy.GetComponent<EnemyHealth>();
@@ -89,20 +120,29 @@ public class EnemySpawnController : MonoBehaviour
                 attackRange,
                 gold
             );
-
         }
     }
 
     private void OnDrawGizmos()
     {
-        if (!showSpawnRange) return;
+        if (!showSpawnRange || canvasRect == null) return;
+
+        // 캔버스의 크기와 위치 정보 가져오기
+        Rect canvasRectSize = canvasRect.rect;
+        Vector2 center = canvasRect.position;
+
+        float rightEdgeX = center.x + (canvasRectSize.width * 0.5f);
+        float spawnX = rightEdgeX + (canvasRectSize.width * (spawnXOffsetPercentage - 1f));
+
+        float minY = center.y + (canvasRectSize.height * (-0.5f + minSpawnHeightPercentage));
+        float maxY = center.y + (canvasRectSize.height * (-0.5f + maxSpawnHeightPercentage));
 
         Gizmos.color = Color.yellow;
-        Vector3 lineStart = new Vector3(spawnX, minSpawnHeight, 0);
-        Vector3 lineEnd = new Vector3(spawnX, maxSpawnHeight, 0);
+        Vector3 lineStart = new Vector3(spawnX, minY, 0);
+        Vector3 lineEnd = new Vector3(spawnX, maxY, 0);
         Gizmos.DrawLine(lineStart, lineEnd);
 
-        float sphereRadius = 0.2f;
+        float sphereRadius = 20f;
         Gizmos.DrawWireSphere(lineStart, sphereRadius);
         Gizmos.DrawWireSphere(lineEnd, sphereRadius);
     }
