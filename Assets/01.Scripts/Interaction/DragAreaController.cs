@@ -1,28 +1,36 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class DragAreaController : MonoBehaviour
+public class DragAreaController : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [SerializeField] private SpinnerController spinnerController;
 
-    private void OnMouseDown()
+    private void Awake()
     {
-        spinnerController.CheckInputClick(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-        Debug.Log("마우스 클릭됨");
-    }
-
-    private void OnMouseDrag()
-    {
-
-        if (spinnerController.isDragging)
+        if (spinnerController == null)
         {
-            Vector2 currentPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            spinnerController.HandleDrag(currentPosition);
+            spinnerController = FindObjectOfType<SpinnerController>();
         }
     }
 
-    private void OnMouseUp()
+    public void OnPointerDown(PointerEventData eventData)
     {
-        Debug.Log("마우스 뗌");
-        spinnerController.isDragging = false;
+        if (spinnerController == null) return;
+        spinnerController.CheckInputClick(eventData.position);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (spinnerController == null) return;
+        if (spinnerController.isDragging)
+        {
+            spinnerController.HandleDrag(eventData.position);
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (spinnerController == null) return;
+        spinnerController.OnDragEnd();
     }
 }
