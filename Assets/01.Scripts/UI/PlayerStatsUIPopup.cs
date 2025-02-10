@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using DG.Tweening; // DOTween 네임스페이스 추가
 
 public class PlayerStatsUIPopup : MonoBehaviour
 {
@@ -13,28 +14,69 @@ public class PlayerStatsUIPopup : MonoBehaviour
     [SerializeField] private TMP_Text criticalChanceText;
     [SerializeField] private TMP_Text criticalMultiplierText;
 
+    [Header("Animation Settings")]
+    [SerializeField] private float animationDuration = 0.4f; // 팝업 애니메이션 시간
+    [SerializeField] private Vector3 popupStartScale = new Vector3(0.7f, 0.7f, 1f); // 시작 크기
+    [SerializeField] private float popupEndScale = 1.0f; // 최종 크기
+
     private void Start()
     {
-        if (statsPanel != null) statsPanel.SetActive(false); // 시작 시 숨김
-        if (dimObject != null) dimObject.SetActive(false); // Dim도 숨김
+        if (statsPanel != null)
+        {
+            statsPanel.SetActive(false); // 시작 시 숨김
+            statsPanel.transform.localScale = popupStartScale; // 초기 크기 설정
+        }
+
+        if (dimObject != null)
+        {
+            dimObject.SetActive(false); // 🔹 dim은 단순히 껐다 켜는 용도
+        }
     }
 
     public void ToggleStatsPanel()
     {
         bool isActive = !statsPanel.activeSelf;
-        statsPanel.SetActive(isActive);
-        if (dimObject != null) dimObject.SetActive(isActive); // Dim 표시
-
         if (isActive)
         {
-            UpdateStatsUI();
+            ShowPopup();
         }
+        else
+        {
+            CloseStatsPanel();
+        }
+    }
+
+    private void ShowPopup()
+    {
+        if (statsPanel == null) return;
+
+        // 🔹 dim을 단순 활성화 (애니메이션 없음)
+        if (dimObject != null)
+        {
+            dimObject.SetActive(true);
+        }
+
+        // 🔹 팝업 애니메이션 적용
+        statsPanel.SetActive(true);
+        statsPanel.transform.localScale = popupStartScale;
+        statsPanel.transform.DOScale(popupEndScale, animationDuration)
+            .SetEase(Ease.OutBack); // 부드러운 확대 애니메이션
+
+        UpdateStatsUI(); // 데이터 업데이트
     }
 
     public void CloseStatsPanel()
     {
+        if (statsPanel == null) return;
+
+        // 🔹 DOTween 없이 즉시 비활성화
         statsPanel.SetActive(false);
-        if (dimObject != null) dimObject.SetActive(false); // Dim도 닫기
+
+        // 🔹 dim도 즉시 비활성화
+        if (dimObject != null)
+        {
+            dimObject.SetActive(false);
+        }
     }
 
     private void UpdateStatsUI()
