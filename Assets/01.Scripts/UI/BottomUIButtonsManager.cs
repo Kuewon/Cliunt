@@ -7,41 +7,58 @@ using DG.Tweening;
 public class BottomUIButtonsManager : MonoBehaviour
 {
     [Header("UI Buttons")]
-    [SerializeField] private List<Button> buttons = new List<Button>(); // 버튼 리스트
-    [SerializeField] private Sprite xButtonSprite; // X 버튼 이미지
+    [SerializeField] private List<Button> buttons = new List<Button>();
+    [SerializeField] private Sprite xButtonSprite;
 
     [Header("Popup Settings")]
-    [SerializeField] private GameObject popupPanel; // 팝업 창
-    [SerializeField] private float popupSpeed = 0.5f; // 팝업이 올라오는 속도
-    [SerializeField] private float bounceStrength = 1.2f; // 튕기는 정도
-    [SerializeField] private float popupStartOffset = -600f; // 시작 위치 (Y 좌표)
-    
-    private Button activeButton = null; // 현재 활성화된 버튼
-    private Sprite previousSprite = null; // 원래 버튼 이미지 저장
-    private Dictionary<Button, TMP_Text> buttonTextMap = new Dictionary<Button, TMP_Text>(); // 버튼-텍스트 매핑
+    [SerializeField] private GameObject popupPanel;
+    [SerializeField] private float popupSpeed = 0.5f;
+    [SerializeField] private float popupStartOffset = -600f;
+
+    [Header("Second Button Animation")]
+    [SerializeField] private GameObject brownImage;
+    [SerializeField] private GameObject redImage;
+    [SerializeField] private GameObject spinnerObject;
+    [SerializeField] private GameObject secondPopupPanel;
+    [SerializeField] private float secondButtonAnimSpeed = 0.5f;
+    [SerializeField] private float brownStartOffset = -300f;
+    [SerializeField] private float redStartOffset = 300f;
+    [SerializeField] private float collisionStopOffset = 30f;
+    [SerializeField] private float collisionBounceStrength = 50f;
+    [SerializeField] private float collisionBounceDuration = 0.2f;
+
+    [Header("Spinner Settings")]
+    [SerializeField] private float spinnerStartScale = 5f;
+    [SerializeField] private float spinnerScaleDuration = 0.3f;
+    [SerializeField] private float spinnerStartDelay = 0.15f;
+
+    [Header("Second Button Toggle")]
+    [SerializeField] private Button toggleButton;
+    [SerializeField] private GameObject redToggleImage;
+    [SerializeField] private GameObject greenToggleImage;
+
+    private Button activeButton = null;
+    private Sprite previousSprite = null;
+    private Dictionary<Button, TMP_Text> buttonTextMap = new Dictionary<Button, TMP_Text>();
+    private bool isRedActive = true;
 
     private void Start()
     {
         InitializeButtons();
+        HideAllPopups();
 
-        if (popupPanel != null)
-        {
-            popupPanel.SetActive(false); // 시작 시 팝업 숨김
-        }
+        if (toggleButton != null)
+            toggleButton.onClick.AddListener(ToggleRedGreenImages);
     }
 
     private void InitializeButtons()
     {
-        for (int i = 0; i < buttons.Count; i++)
+        foreach (var button in buttons)
         {
-            Button button = buttons[i];
             button.onClick.AddListener(() => ToggleButton(button));
-
             TMP_Text tmpText = button.GetComponentInChildren<TMP_Text>();
             if (tmpText != null)
-            {
                 buttonTextMap[button] = tmpText;
-            }
         }
     }
 
@@ -49,83 +66,58 @@ public class BottomUIButtonsManager : MonoBehaviour
     {
         if (!buttons.Contains(clickedButton)) return;
 
-        Image clickedImage = clickedButton.GetComponent<Image>();
-        TMP_Text clickedText = buttonTextMap.ContainsKey(clickedButton) ? buttonTextMap[clickedButton] : null;
-
-        if (clickedImage == null) return;
-
-        // 기존 버튼 복구
-        RestorePreviousButton();
-
-        // 같은 버튼을 다시 눌렀다면 비활성화 (팝업 즉시 숨기기)
         if (activeButton == clickedButton)
         {
-            ResetButton(clickedImage, clickedText);
-            HidePopupInstantly();
+            ResetButton(clickedButton);
+            HideAllPopups();
             return;
         }
 
-        // 새 버튼 활성화
-        ActivateNewButton(clickedButton, clickedImage, clickedText);
+        HideAllPopups();
+        ActivateNewButton(clickedButton);
 
-        // 첫 번째 버튼이면 팝업 표시
-        if (clickedButton == buttons[0])
+        if (clickedButton == buttons[0]) ShowPopup();
+        else if (clickedButton == buttons[1]) PlayAnimation();
+    }
+
+    private void HideAllPopups()
+    {
+        popupPanel?.SetActive(false);
+        secondPopupPanel?.SetActive(false);
+        brownImage?.SetActive(false);
+        redImage?.SetActive(false);
+        spinnerObject?.SetActive(false);
+
+        if (activeButton != null)
         {
-            ShowPopup();
-        }
-        else
-        {
-            HidePopupInstantly(); // 다른 버튼을 누르면 팝업 즉시 사라짐
+            ResetButton(activeButton);
+            activeButton = null;
         }
     }
 
-    private void RestorePreviousButton()
+    private void ResetButton(Button clickedButton)
     {
-        if (activeButton == null) return;
-
-        Image activeImage = activeButton.GetComponent<Image>();
-        TMP_Text activeText = buttonTextMap.ContainsKey(activeButton) ? buttonTextMap[activeButton] : null;
-
-        if (activeImage != null)
-        {
-            activeImage.sprite = previousSprite;
-            activeImage.SetNativeSize();
-        }
-
-        if (activeText != null)
-        {
-            activeText.gameObject.SetActive(true);
-        }
-
-        HidePopupInstantly(); // 기존 버튼이 비활성화되면 팝업 즉시 숨김
-    }
-
-    private void ResetButton(Image clickedImage, TMP_Text clickedText)
-    {
-        if (previousSprite != null)
+        if (clickedButton.TryGetComponent(out Image clickedImage) && previousSprite != null)
         {
             clickedImage.sprite = previousSprite;
             clickedImage.SetNativeSize();
         }
 
-        if (clickedText != null)
-        {
+        if (buttonTextMap.TryGetValue(clickedButton, out TMP_Text clickedText))
             clickedText.gameObject.SetActive(true);
-        }
-
-        activeButton = null;
     }
 
-    private void ActivateNewButton(Button clickedButton, Image clickedImage, TMP_Text clickedText)
+    private void ActivateNewButton(Button clickedButton)
     {
-        previousSprite = clickedImage.sprite;
-        clickedImage.sprite = xButtonSprite;
-        clickedImage.SetNativeSize();
-
-        if (clickedText != null)
+        if (clickedButton.TryGetComponent(out Image clickedImage))
         {
-            clickedText.gameObject.SetActive(false);
+            previousSprite = clickedImage.sprite;
+            clickedImage.sprite = xButtonSprite;
+            clickedImage.SetNativeSize();
         }
+
+        if (buttonTextMap.TryGetValue(clickedButton, out TMP_Text clickedText))
+            clickedText.gameObject.SetActive(false);
 
         activeButton = clickedButton;
     }
@@ -135,20 +127,64 @@ public class BottomUIButtonsManager : MonoBehaviour
         if (popupPanel == null) return;
 
         popupPanel.SetActive(true);
-
         RectTransform popupTransform = popupPanel.GetComponent<RectTransform>();
-        popupTransform.anchoredPosition = new Vector2(0, popupStartOffset); // 시작 위치 설정
-
-        // 부드럽게 위로 이동 + 튕기는 애니메이션
-        popupTransform.DOAnchorPosY(0, popupSpeed)
-            .SetEase(Ease.OutBack, bounceStrength);
+        popupTransform.anchoredPosition = new Vector2(0, popupStartOffset);
+        popupTransform.DOAnchorPosY(0, popupSpeed).SetEase(Ease.OutBack);
     }
 
-    private void HidePopupInstantly()
+    private void PlayAnimation()
     {
-        if (popupPanel != null)
+        if (brownImage == null || redImage == null || spinnerObject == null || secondPopupPanel == null) return;
+
+        brownImage.SetActive(true);
+        redImage.SetActive(true);
+        secondPopupPanel.SetActive(true);
+
+        RectTransform brownTransform = brownImage.GetComponent<RectTransform>();
+        RectTransform redTransform = redImage.GetComponent<RectTransform>();
+
+        brownTransform.anchoredPosition = new Vector2(0, brownStartOffset);
+        redTransform.anchoredPosition = new Vector2(0, redStartOffset);
+
+        // 첫 번째 충돌 애니메이션
+        brownTransform.DOAnchorPosY(collisionStopOffset, secondButtonAnimSpeed).SetEase(Ease.OutQuad);
+        redTransform.DOAnchorPosY(-collisionStopOffset, secondButtonAnimSpeed)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() => PlayBounceEffect(brownTransform, redTransform));
+
+        // 스피너 애니메이션 실행
+        spinnerObject.SetActive(false);
+        spinnerObject.transform.localScale = Vector3.one * spinnerStartScale;
+        spinnerObject.transform.DOScale(Vector3.one, spinnerScaleDuration)
+            .SetEase(Ease.OutQuad)
+            .SetDelay(spinnerStartDelay)
+            .OnStart(() => spinnerObject.SetActive(true));
+    }
+
+    private void PlayBounceEffect(RectTransform brownTransform, RectTransform redTransform)
+    {
+        Sequence collisionSequence = DOTween.Sequence();
+
+        float[] bounceStrengths = { collisionBounceStrength, collisionBounceStrength * 0.6f, collisionBounceStrength * 0.3f };
+        float[] bounceDurations = { collisionBounceDuration, collisionBounceDuration * 0.7f, collisionBounceDuration * 0.5f };
+
+        for (int i = 0; i < bounceStrengths.Length; i++)
         {
-            popupPanel.SetActive(false); // 즉시 비활성화
+            float strength = bounceStrengths[i];
+            float duration = bounceDurations[i];
+
+            collisionSequence.Append(brownTransform.DOAnchorPosY(collisionStopOffset - strength, duration).SetEase(Ease.OutBack));
+            collisionSequence.Join(redTransform.DOAnchorPosY(-collisionStopOffset + strength, duration).SetEase(Ease.OutBack));
+
+            collisionSequence.Append(brownTransform.DOAnchorPosY(collisionStopOffset, duration * 0.8f).SetEase(Ease.InOutQuad));
+            collisionSequence.Join(redTransform.DOAnchorPosY(-collisionStopOffset, duration * 0.8f).SetEase(Ease.InOutQuad));
         }
+    }
+
+    private void ToggleRedGreenImages()
+    {
+        isRedActive = !isRedActive;
+        redToggleImage.SetActive(isRedActive);
+        greenToggleImage.SetActive(!isRedActive);
     }
 }
