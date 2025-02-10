@@ -1,28 +1,34 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class HitEffect : MonoBehaviour
 {
-    private SpriteRenderer spriteRenderer;
+    private Image image;
     private float flashTime = 0.1f;
     private float criticalFlashTime = 0.2f;
     private float flashTimer = 0f;
     private Color originalColor;
     private bool isCriticalFlashing = false;
+    private static Vector2 originalCanvasPos;
 
     private void Awake()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
+        image = GetComponent<Image>();
+        if (image != null)
         {
-            originalColor = spriteRenderer.color;
+            originalColor = image.color;
+        }
+        else
+        {
+            Debug.LogWarning("Image 컴포넌트를 찾을 수 없습니다!");
         }
     }
 
     public void PlayHitEffect()
     {
-        if (spriteRenderer != null && !isCriticalFlashing)
+        if (image != null && !isCriticalFlashing)
         {
-            spriteRenderer.color = Color.white;
+            image.color = Color.white;
             flashTimer = flashTime;
             StartCoroutine(FlashRoutine(Color.white, flashTime));
         }
@@ -30,18 +36,27 @@ public class HitEffect : MonoBehaviour
 
     public void PlayCriticalHitEffect()
     {
-        if (spriteRenderer != null)
+        if (image != null)
         {
             isCriticalFlashing = true;
-            spriteRenderer.color = Color.red;
+            image.color = Color.red;
             flashTimer = criticalFlashTime;
             StartCoroutine(FlashRoutine(Color.red, criticalFlashTime));
 
-            // 태그로 Top_Ingame 찾기
+            // 캔버스 찾기 및 흔들기 효과 적용
             GameObject topIngame = GameObject.FindGameObjectWithTag("TopIngame");
             if (topIngame != null)
             {
-                StartCoroutine(ShakeCanvas(topIngame.GetComponent<RectTransform>(), 0.2f, 0.2f));
+                RectTransform canvasRect = topIngame.GetComponent<RectTransform>();
+                if (canvasRect != null)
+                {
+                    // 최초 실행 시 원본 위치 저장
+                    if (originalCanvasPos == Vector2.zero)
+                    {
+                        originalCanvasPos = canvasRect.anchoredPosition;
+                    }
+                    StartCoroutine(ShakeCanvas(canvasRect, 0.2f, 5f));
+                }
             }
         }
     }
@@ -57,17 +72,17 @@ public class HitEffect : MonoBehaviour
             {
                 float intensity = 1f + Mathf.Sin(Time.time * 30f) * 0.2f;
                 Color intensifiedColor = flashColor * intensity;
-                spriteRenderer.color = Color.Lerp(originalColor, intensifiedColor, lerp);
+                image.color = Color.Lerp(originalColor, intensifiedColor, lerp);
             }
             else
             {
-                spriteRenderer.color = Color.Lerp(originalColor, flashColor, lerp);
+                image.color = Color.Lerp(originalColor, flashColor, lerp);
             }
 
             yield return null;
         }
 
-        spriteRenderer.color = originalColor;
+        image.color = originalColor;
         isCriticalFlashing = false;
     }
 
@@ -75,19 +90,20 @@ public class HitEffect : MonoBehaviour
     {
         if (canvasRect == null) yield break;
 
-        Vector2 originalPos = canvasRect.anchoredPosition;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
-            float x = Random.Range(-1f, 1f) * magnitude * 30f;
-            float y = Random.Range(-1f, 1f) * magnitude * 30f;
+            float x = Random.Range(-1f, 1f) * magnitude;
+            float y = Random.Range(-1f, 1f) * magnitude;
 
-            canvasRect.anchoredPosition = new Vector2(originalPos.x + x, originalPos.y + y);
+            canvasRect.anchoredPosition = originalCanvasPos + new Vector2(x, y);
+            
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        canvasRect.anchoredPosition = originalPos;
+        // 흔들림 효과 후 원래 위치로 복귀
+        canvasRect.anchoredPosition = originalCanvasPos;
     }
 }

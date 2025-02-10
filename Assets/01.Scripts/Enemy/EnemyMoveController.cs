@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;  // Image를 사용하기 위해 추가
 
 public class EnemyMoveController : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class EnemyMoveController : MonoBehaviour
 
     private Animator animator;
     private Transform playerTransform;
-    private SpriteRenderer spriteRenderer;
+    private Image image;  // SpriteRenderer 대신 Image 사용
     private float attackTimer;
     private bool canAttack = true;
 
@@ -20,13 +21,13 @@ public class EnemyMoveController : MonoBehaviour
     {
         // Awake에서 컴포넌트들을 가져옵니다
         animator = GetComponent<Animator>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        image = GetComponent<Image>();  // Image 컴포넌트 가져오기
 
         // 컴포넌트가 없다면 경고 메시지를 출력합니다
         if (animator == null)
             Debug.LogWarning("Animator component is missing on the enemy!");
-        if (spriteRenderer == null)
-            Debug.LogWarning("SpriteRenderer component is missing on the enemy!");
+        if (image == null)
+            Debug.LogWarning("Image component is missing on the enemy!");
     }
 
     private void Start()
@@ -62,8 +63,17 @@ public class EnemyMoveController : MonoBehaviour
         // 플레이어와의 거리 계산
         float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
 
-        // 스프라이트 방향 설정
-        spriteRenderer.flipX = direction.x < 0;
+        // 이미지 방향 설정 (flipX 대신 scale 사용)
+        Vector3 scale = transform.localScale;
+        if (direction.x < 0)
+        {
+            scale.x = -Mathf.Abs(scale.x);
+        }
+        else
+        {
+            scale.x = Mathf.Abs(scale.x);
+        }
+        transform.localScale = scale;
 
         if (distanceToPlayer > attackRange)
         {

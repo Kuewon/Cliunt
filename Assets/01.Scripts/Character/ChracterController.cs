@@ -6,6 +6,7 @@ public class CharacterController : MonoBehaviour
 {
     [Header("Components")]
     [SerializeField] private Animator animator;
+    [SerializeField] private Animator gunAnimator;
     [SerializeField] private LayerMask enemyLayer;
 
     [Header("Base Stats")]
@@ -23,6 +24,7 @@ public class CharacterController : MonoBehaviour
 
     private bool isInitialized = false;
     private bool isManualAttackPlaying = false;
+    private RectTransform rectTransform;
 
     private const string AUTOATTACK_TRIGGER = "AutoAttack";
     private const string MANUALATTACK_TRIGGER = "ManualAttack";
@@ -33,6 +35,18 @@ public class CharacterController : MonoBehaviour
         {
             animator = GetComponent<Animator>();
         }
+        
+        // Gun의 Animator 자동 찾기
+        if (gunAnimator == null)
+        {
+            Transform gunTransform = transform.Find("Gun");
+            if (gunTransform != null)
+            {
+                gunAnimator = gunTransform.GetComponent<Animator>();
+            }
+        }
+        
+        rectTransform = GetComponent<RectTransform>();
     }
 
     private void Start()
@@ -114,18 +128,21 @@ public class CharacterController : MonoBehaviour
     {
         isManualAttackPlaying = true;
 
-        // 애니메이션 재생
+        // 캐릭터와 총 모두 애니메이션 재생
         animator.ResetTrigger(AUTOATTACK_TRIGGER);
         animator.SetTrigger(MANUALATTACK_TRIGGER);
+        
+        if (gunAnimator != null)
+        {
+            gunAnimator.ResetTrigger(AUTOATTACK_TRIGGER);
+            gunAnimator.SetTrigger(MANUALATTACK_TRIGGER);
+        }
 
-        // 애니메이션 정보 가져오기
         float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
 
-        // 애니메이션 중간 지점까지 대기 후 데미지 적용
         yield return new WaitForSeconds(animationLength * 0.5f);
         PerformAttack("수동");
 
-        // 나머지 애니메이션 시간 대기
         yield return new WaitForSeconds(animationLength * 0.5f);
 
         isManualAttackPlaying = false;
@@ -142,24 +159,24 @@ public class CharacterController : MonoBehaviour
             {
                 elapsedTime += Time.deltaTime;
 
-                // 공격 간격이 지났는지 확인
                 if (elapsedTime - lastAttackTime >= attackInterval)
                 {
                     lastAttackTime = elapsedTime;
 
-                    // 애니메이션 재생
+                    // 캐릭터와 총 모두 애니메이션 재생
                     animator.SetTrigger(AUTOATTACK_TRIGGER);
+                    if (gunAnimator != null)
+                    {
+                        gunAnimator.SetTrigger(AUTOATTACK_TRIGGER);
+                    }
 
-                    // 애니메이션의 중간 지점에서 데미지 적용
                     float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
-                    yield return new WaitForSeconds(animationLength * 0.5f);
+                    yield return new WaitForSeconds(animationLength);
 
                     PerformAttack("자동");
 
-                    // 남은 애니메이션 시간 대기
                     yield return new WaitForSeconds(animationLength * 0.5f);
 
-                    // 남은 공격 간격 대기
                     float remainingInterval = attackInterval - animationLength;
                     if (remainingInterval > 0)
                     {
@@ -176,15 +193,28 @@ public class CharacterController : MonoBehaviour
         bool isCritical = Random.value < criticalChance;
         float finalDamage = CalculateDamage(isCritical);
 
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayer);
-        foreach (Collider2D enemy in hitEnemies)
+        // UI에서의 적 감지
+        var enemies = FindObjectsOfType<EnemyHealth>();
+        foreach (var enemy in enemies)
         {
-            if (enemy.TryGetComponent(out EnemyHealth enemyHealth))
+            if (IsEnemyInRange(enemy.gameObject))
             {
-                // isCritical 파라미터 전달 확인
-                enemyHealth.TakeDamage(finalDamage, isCritical);
+                enemy.TakeDamage(finalDamage, isCritical);
             }
         }
+    }
+    
+    private bool IsEnemyInRange(GameObject enemy)
+    {
+        RectTransform enemyRect = enemy.GetComponent<RectTransform>();
+        if (enemyRect == null) return false;
+
+        // UI 공간에서의 거리 계산
+        Vector2 characterPos = rectTransform.position;
+        Vector2 enemyPos = enemyRect.position;
+        float distance = Vector2.Distance(characterPos, enemyPos);
+
+        return distance <= attackRange;
     }
 
     private float CalculateDamage(bool isCritical)
@@ -197,9 +227,12 @@ public class CharacterController : MonoBehaviour
         return damage;
     }
 
-    private void OnDrawGizmosSelected()
+    private void OnDrawGizmos()
     {
+        if (!rectTransform) return;
+
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Vector3 center = rectTransform.position;
+        Gizmos.DrawWireSphere(center, attackRange);
     }
 }
