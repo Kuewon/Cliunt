@@ -830,7 +830,7 @@ MonoBehaviour:
   m_ChildControlWidth: 1
   m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
-  m_ChildScaleHeight: 0
+  m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
 --- !u!114 &6545003231076827187
 MonoBehaviour:
@@ -852,8 +852,25 @@ MonoBehaviour:
   xButtonSprite: {fileID: 21300000, guid: e29fec72b62b14584a301c7682449b64, type: 3}
   popupPanel: {fileID: 0}
   popupSpeed: 0.3
-  bounceStrength: 0.5
-  popupStartOffset: -150
+  popupStartOffset: -300
+  brownImage: {fileID: 0}
+  redImage: {fileID: 0}
+  spinnerObject: {fileID: 0}
+  secondPopupPanel: {fileID: 0}
+  secondButtonAnimSpeed: 0.05
+  brownStartOffset: -300
+  redStartOffset: 300
+  collisionStopOffset: 0
+  collisionBounceStrength: 50
+  collisionBounceDuration: 0.1
+  spinnerStartScale: 10
+  spinnerScaleDuration: 0.125
+  spinnerStartDelay: 0.225
+  toggleButton: {fileID: 0}
+  redToggleImage: {fileID: 0}
+  greenToggleImage: {fileID: 0}
+  toggleAnimationDuration: 0.3
+  toggleMoveDistance: 1080
 --- !u!1 &7865365618637833160
 GameObject:
   m_ObjectHideFlags: 0

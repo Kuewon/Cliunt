@@ -205,6 +205,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Spinner
       objectReference: {fileID: 0}
+    - target: {fileID: 5688645801834881568, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
