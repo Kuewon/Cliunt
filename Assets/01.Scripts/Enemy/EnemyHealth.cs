@@ -9,7 +9,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private HealthBar healthBar;  // Inspector에서 할당
 
     [Header("Health Settings")]
-    [SerializeField] private float maxHealth = 100f;
+    private float maxHealth = 100f;
 
     [Header("Hit Effects")]
     [SerializeField] private Color normalHitColor = Color.white;

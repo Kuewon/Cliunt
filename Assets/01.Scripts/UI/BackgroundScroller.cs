@@ -1,13 +1,45 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
+using System;
 
 public class BackgroundScroller : MonoBehaviour
 {
+    public static BackgroundScroller Instance { get; private set; }
+
     [SerializeField] private RectTransform backgroundImage1;
     [SerializeField] private RectTransform backgroundImage2;
-    [SerializeField] private float scrollSpeed = 2f;
+    private float scrollDuration = 2.5f;
 
     private float backgroundWidth;
+    private bool isScrolling = false;
+    private Animator characterAnimator;
+    private bool isImage1Active = true;  // í˜„ì¬ í™”ë©´ì— ë³´ì´ëŠ” ë°°ê²½ì´ ì–´ë–¤ ê²ƒì¸ì§€ ì¶”ì 
+
+    public event Action OnScrollComplete;
+    public event Action<float> OnScrollUpdate;
+
+    public bool IsScrolling => isScrolling;
+    
+    public float GetScrollAmount() => backgroundWidth;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player != null)
+        {
+            characterAnimator = player.GetComponent<Animator>();
+        }
+    }
 
     private void Start()
     {
@@ -16,65 +48,113 @@ public class BackgroundScroller : MonoBehaviour
             Debug.LogError("Background images not assigned!");
             return;
         }
+    
+        backgroundWidth = backgroundImage1.rect.width;
+        SetupBackgrounds();
 
-        // ¹è°æ ÀÌ¹ÌÁöÀÇ ³Êºñ ±¸ÇÏ±â
-        backgroundWidth = Mathf.Abs(backgroundImage1.offsetMin.x) + Mathf.Abs(backgroundImage1.offsetMax.x);
-
-        // µÎ ¹øÂ° ¹è°æÀ» Ã¹ ¹øÂ° ¹è°æ ¿À¸¥ÂÊ¿¡ Á¤È®È÷ ¹èÄ¡
-        SetupSecondBackground();
-
-        Debug.Log($"Background Width: {backgroundWidth}");
-        Debug.Log($"Background 1 Position: {backgroundImage1.anchoredPosition}");
-        Debug.Log($"Background 2 Position: {backgroundImage2.anchoredPosition}");
-    }
-
-    private void SetupSecondBackground()
-    {
-        // Ã¹ ¹øÂ° ¹è°æÀÇ Left, Right ¿ÀÇÁ¼Â º¹»ç
-        backgroundImage2.offsetMin = new Vector2(backgroundImage1.offsetMin.x, backgroundImage1.offsetMin.y);
-        backgroundImage2.offsetMax = new Vector2(backgroundImage1.offsetMax.x, backgroundImage1.offsetMax.y);
-
-        // µÎ ¹øÂ° ¹è°æÀ» Ã¹ ¹øÂ° ¹è°æ ¹Ù·Î ¿À¸¥ÂÊ¿¡ ¹èÄ¡
-        Vector2 firstBgPosition = backgroundImage1.anchoredPosition;
-        backgroundImage2.anchoredPosition = new Vector2(firstBgPosition.x + backgroundWidth, firstBgPosition.y);
-
-        // anchorMin°ú anchorMaxµµ µ¿ÀÏÇÏ°Ô ¼³Á¤
-        backgroundImage2.anchorMin = backgroundImage1.anchorMin;
-        backgroundImage2.anchorMax = backgroundImage1.anchorMax;
-    }
-
-    private void Update()
-    {
-        // ¹è°æ ½ºÅ©·Ñ
-        ScrollBackground(backgroundImage1);
-        ScrollBackground(backgroundImage2);
-    }
-
-    private void ScrollBackground(RectTransform background)
-    {
-        // ÇöÀç À§Ä¡
-        Vector2 position = background.anchoredPosition;
-
-        // ¿ŞÂÊÀ¸·Î ÀÌµ¿
-        position.x -= scrollSpeed * Time.deltaTime;
-        background.anchoredPosition = position;
-
-        // È­¸é ¹ÛÀ¸·Î ¿ÏÀüÈ÷ ³ª°¬´ÂÁö Ã¼Å©
-        if (position.x <= backgroundImage1.anchoredPosition.x - backgroundWidth)
+        if (WaveManager.Instance != null)
         {
-            // ÇöÀç º¸ÀÌ´Â ¹è°æÀÇ ¿À¸¥ÂÊÀ¸·Î ÀÌµ¿
-            position.x += backgroundWidth * 2;
-            background.anchoredPosition = position;
+            WaveManager.Instance.OnWaveCompleted += OnWaveCompleted;
+        }
+
+        StartCoroutine(ScrollBackgrounds());
+    }
+
+    private void SetupBackgrounds()
+    {
+        // ì²« ë²ˆì§¸ ë°°ê²½ì€ í™”ë©´ ì‹œì‘ì ì—
+        backgroundImage1.anchoredPosition = Vector2.zero;
+        // ë‘ ë²ˆì§¸ ë°°ê²½ì€ ì²« ë²ˆì§¸ ë°°ê²½ ë°”ë¡œ ì˜¤ë¥¸ìª½ì—
+        backgroundImage2.anchoredPosition = new Vector2(backgroundWidth, 0);
+        isImage1Active = true;  // ì´ˆê¸° ìƒíƒœ ì„¤ì •
+    }
+
+    public void OnWaveCompleted()
+    {
+        if (!isScrolling)
+        {
+            PrepareNextBackground();
+            
+            if (WaveMovementController.Instance != null)
+            {
+                WaveMovementController.Instance.ResetWaveMovement();
+            }
+            StartCoroutine(ScrollBackgrounds());
         }
     }
 
-    // µğ¹ö±×¿ë - ¹è°æ À§Ä¡ È®ÀÎ
-    private void OnGUI()
+    private void PrepareNextBackground()
     {
-        if (backgroundImage1 != null && backgroundImage2 != null)
+        // í˜„ì¬ í™œì„±í™”ëœ ë°°ê²½ì— ë”°ë¼ ë‹¤ìŒ ë°°ê²½ ì¤€ë¹„
+        if (isImage1Active)
         {
-            GUILayout.Label($"BG1 Pos: {backgroundImage1.anchoredPosition}");
-            GUILayout.Label($"BG2 Pos: {backgroundImage2.anchoredPosition}");
+            // Image1ì´ í™œì„±í™”ë˜ì–´ ìˆì„ ë•Œ (í™”ë©´ì— ë³´ì¼ ë•Œ)
+            backgroundImage2.anchoredPosition = new Vector2(backgroundWidth, 0);
+            backgroundImage1.anchoredPosition = Vector2.zero;
+        }
+        else
+        {
+            // Image2ê°€ í™œì„±í™”ë˜ì–´ ìˆì„ ë•Œ
+            backgroundImage1.anchoredPosition = new Vector2(backgroundWidth, 0);
+            backgroundImage2.anchoredPosition = Vector2.zero;
+        }
+    }
+
+    private IEnumerator ScrollBackgrounds()
+    {
+        isScrolling = true;
+    
+        if (characterAnimator != null)
+        {
+            characterAnimator.SetBool("IsWalking", true);
+        }
+
+        RectTransform currentBg = isImage1Active ? backgroundImage1 : backgroundImage2;
+        RectTransform nextBg = isImage1Active ? backgroundImage2 : backgroundImage1;
+
+        Vector2 currentStartPos = currentBg.anchoredPosition;
+        Vector2 nextStartPos = nextBg.anchoredPosition;
+    
+        Vector2 currentTargetPos = currentStartPos + Vector2.left * backgroundWidth;
+        Vector2 nextTargetPos = nextStartPos + Vector2.left * backgroundWidth;
+
+        float elapsedTime = 0f;
+        while (elapsedTime < scrollDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / scrollDuration;
+        
+            float smoothT = Mathf.SmoothStep(0f, 1f, t);
+        
+            currentBg.anchoredPosition = Vector2.Lerp(currentStartPos, currentTargetPos, smoothT);
+            nextBg.anchoredPosition = Vector2.Lerp(nextStartPos, nextTargetPos, smoothT);
+
+            OnScrollUpdate?.Invoke(smoothT);
+
+            yield return null;
+        }
+
+        // ì •í™•í•œ ìœ„ì¹˜ë¡œ ì„¤ì •
+        currentBg.anchoredPosition = currentTargetPos;
+        nextBg.anchoredPosition = nextTargetPos;
+
+        // í™œì„± ë°°ê²½ ì „í™˜
+        isImage1Active = !isImage1Active;
+    
+        if (characterAnimator != null)
+        {
+            characterAnimator.SetBool("IsWalking", false);
+        }
+
+        isScrolling = false;
+        OnScrollComplete?.Invoke();
+    }
+    
+    private void OnDestroy()
+    {
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnWaveCompleted -= OnWaveCompleted;
         }
     }
 }

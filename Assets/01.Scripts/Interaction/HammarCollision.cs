@@ -4,7 +4,7 @@ public class HammarCollision : MonoBehaviour
     public CoolingBar coolingBar;
     public float attackPower; // 구글
     public int maxHits = 6; // 지금은 총알의 역할을 대신하고있음. 나중에 bullet으로 바꿔야함.
-    private CharacterController characterController;
+    private PlayerController playerController;
     private int hitCount = 1;
     private bool isFirstHit = true;
     private bool wasLocked = false;
@@ -16,8 +16,8 @@ public class HammarCollision : MonoBehaviour
         {
             coolingBar = FindObjectOfType<CoolingBar>();
         }
-        characterController = FindObjectOfType<CharacterController>();
-        if (characterController == null)
+        playerController = FindObjectOfType<PlayerController>();
+        if (playerController == null)
         {
             Debug.LogError("CharacterController not found in the scene!");
         }
@@ -65,9 +65,9 @@ public class HammarCollision : MonoBehaviour
                     {
                         coolingBar.IncrementGauge(attackPower);
                     }
-                    if (characterController != null)
+                    if (playerController != null)
                     {
-                        characterController.TriggerManualAttack();
+                        playerController.TriggerManualAttack();
                     }
                 }
                 if (isFirstHit)

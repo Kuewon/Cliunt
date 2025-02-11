@@ -3,36 +3,27 @@ using UnityEngine.UI;
 
 public class EnemyMoveController : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 0.5f;
-    [SerializeField] private float attackRange = 1f;
-    [SerializeField] private float attackInterval = 1f;
-    [SerializeField] private float attackDamage = 10f;
-
-    [SerializeField] private float enemyDropGold = 10.0f;
+    private float moveSpeed = 150f;
+    private float attackRange = 1f;
+    private float attackInterval = 1f;
+    private float attackDamage = 10f;
+    private float enemyDropGold = 10.0f;
     public float _enemyDropGold => enemyDropGold;
 
+    private bool canMove = false;
     private Animator animator;
-    private Transform playerTransform;
+    private RectTransform playerRectTransform;
+    private RectTransform myRectTransform;
     private Image image;
     private float attackTimer;
     private bool canAttack = true;
-    private RectTransform rectTransform;
-
-    // 새로운 변수들
-    private Vector2 constantMovementDirection = Vector2.left;
-    private float originalXPosition;
-    private bool isWithinAttackArea = false;
+    private Vector2 initialPosition;
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
         image = GetComponent<Image>();
-        rectTransform = GetComponent<RectTransform>();
-
-        if (animator == null)
-            Debug.LogWarning("Animator component is missing on the enemy!");
-        if (image == null)
-            Debug.LogWarning("Image component is missing on the enemy!");
+        myRectTransform = GetComponent<RectTransform>();
     }
 
     private void Start()
@@ -40,63 +31,130 @@ public class EnemyMoveController : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
-            playerTransform = player.transform;
+            playerRectTransform = player.GetComponent<RectTransform>();
+        }
+
+        initialPosition = myRectTransform.anchoredPosition;
+
+        // 배경 스크롤 중인지 확인
+        if (BackgroundScroller.Instance != null)
+        {
+            if (BackgroundScroller.Instance.IsScrolling)
+            {
+                // 스크롤 중이면 이벤트 구독
+                BackgroundScroller.Instance.OnScrollUpdate += SyncWithBackground;
+                BackgroundScroller.Instance.OnScrollComplete += StartMoving;
+            }
+            else
+            {
+                // 스크롤 중이 아니면 바로 이동 시작
+                StartMoving();
+            }
         }
         else
         {
-            Debug.LogError("Player with tag 'Player' not found in the scene!");
+            // BackgroundScroller가 없으면 바로 이동 시작
+            StartMoving();
         }
 
-        originalXPosition = rectTransform.anchoredPosition.x;
+        // WaveMovementController에 등록
+        if (WaveMovementController.Instance != null)
+        {
+            WaveMovementController.Instance.RegisterEnemy(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (BackgroundScroller.Instance != null)
+        {
+            BackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
+            BackgroundScroller.Instance.OnScrollComplete -= StartMoving;
+        }
+
+        // WaveMovementController에서 제거
+        if (WaveMovementController.Instance != null)
+        {
+            WaveMovementController.Instance.UnregisterEnemy(this);
+        }
     }
 
     public void SetStats(float damage, float speed, float movement, float range, float gold)
     {
         attackDamage = damage;
         attackInterval = 1f / speed;
-        moveSpeed = movement;
+        moveSpeed = movement * 100f;
         attackRange = range;
         enemyDropGold = gold;
     }
 
-    private void Update()
+    // 배경 스크롤과 함께 이동
+    private void SyncWithBackground(float scrollProgress)
     {
-        if (playerTransform == null) return;
+        float totalScroll = BackgroundScroller.Instance.GetScrollAmount();
+        Vector2 newPos = initialPosition;
+        newPos.x -= totalScroll * scrollProgress;
+        myRectTransform.anchoredPosition = newPos;
 
-        // 항상 왼쪽으로 이동
-        Vector2 currentPosition = rectTransform.anchoredPosition;
-        Vector2 newPosition = currentPosition + (constantMovementDirection * moveSpeed * Time.deltaTime);
-        rectTransform.anchoredPosition = newPosition;
-
-        // 플레이어와의 거리 계산 (X축만 고려)
-        float distanceToPlayer = Mathf.Abs(rectTransform.anchoredPosition.x - playerTransform.position.x);
-
-        // 적 방향 설정 (항상 왼쪽을 바라봄)
-        Vector3 scale = transform.localScale;
-        scale.x = -Mathf.Abs(scale.x);
-        transform.localScale = scale;
-
-        // 걷는 애니메이션 처리
         if (animator != null)
         {
             animator.SetBool("IsWalking", true);
         }
+    }
 
-        // 공격 범위 체크 및 공격 처리
-        if (distanceToPlayer <= attackRange && !isWithinAttackArea)
+    // 스크롤이 끝나면 자체 이동 시작
+    public void StartMoving()
+    {
+        if (BackgroundScroller.Instance != null)
         {
-            isWithinAttackArea = true;
+            BackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
+            BackgroundScroller.Instance.OnScrollComplete -= StartMoving;
+        }
+        canMove = true;
+        
+        if (animator != null)
+        {
+            animator.SetBool("IsWalking", true);
+        }
+    }
+
+    private void Update()
+    {
+        if (playerRectTransform == null || myRectTransform == null) return;
+        if (!canMove) return;
+
+        // 플레이어와의 거리 계산
+        bool inRange = IsInAttackRange();
+
+        // 공격 범위 체크
+        if (inRange)
+        {
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", false);
+            }
+
             if (canAttack)
             {
                 Attack();
             }
         }
-        else if (distanceToPlayer > attackRange)
+        else
         {
-            isWithinAttackArea = false;
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", true);
+            }
+
+            // 이동 처리
+            Vector2 currentPos = myRectTransform.anchoredPosition;
+            float moveDistance = moveSpeed * Time.deltaTime;
+            Vector2 movement = Vector2.left * moveDistance;
+            Vector2 newPosition = currentPos + movement;
+            myRectTransform.anchoredPosition = newPosition;
         }
 
-        // 공격 쿨다운 관리
+        // 공격 쿨다운
         if (!canAttack)
         {
             attackTimer += Time.deltaTime;
@@ -105,12 +163,6 @@ public class EnemyMoveController : MonoBehaviour
                 canAttack = true;
                 attackTimer = 0f;
             }
-        }
-
-        // 공격 범위 안에 있을 때 계속 공격
-        if (isWithinAttackArea && canAttack)
-        {
-            Attack();
         }
     }
 
@@ -121,18 +173,33 @@ public class EnemyMoveController : MonoBehaviour
             animator.SetTrigger("Attack");
         }
 
-        CharacterHealth playerHealth = playerTransform.GetComponent<CharacterHealth>();
+        PlayerHealth playerHealth = playerRectTransform.GetComponent<PlayerHealth>();
         if (playerHealth != null)
         {
             playerHealth.TakeDamage(attackDamage);
         }
 
         canAttack = false;
+        attackTimer = 0f;
     }
-
-    private void OnDrawGizmosSelected()
+    
+    public void SetMovementEnabled(bool enabled)
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        canMove = enabled;
+        if (animator != null)
+        {
+            animator.SetBool("IsWalking", enabled && !IsInAttackRange());
+        }
+    }
+    
+    private bool IsInAttackRange()
+    {
+        if (playerRectTransform == null) return false;
+    
+        Vector2 enemyPos = myRectTransform.position;
+        Vector2 playerPos = playerRectTransform.position;
+        float distance = Vector2.Distance(enemyPos, playerPos);
+    
+        return distance <= attackRange;
     }
 }
