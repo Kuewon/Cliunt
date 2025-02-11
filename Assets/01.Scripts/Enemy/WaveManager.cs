@@ -9,26 +9,28 @@ public class WaveManager : MonoBehaviour
 
     [Header("Stage Settings")]
     [SerializeField] private int currentStage = 1;
-    [SerializeField] private int maxStage = 10; // 최대 스테이지 수
+    [SerializeField] private int maxStage = 10;
 
     [Header("Wave Settings")]
-    [SerializeField] private float spawnInterval = 5f;
     [SerializeField] private float nextWaveDelay = 2f;
-    [SerializeField] private float nextStageDelay = 3f; // 다음 스테이지로 넘어가기 전 대기 시간
+    [SerializeField] private float nextStageDelay = 3f;
 
-    private List<int[]> waveEnemyIndices = new List<int[]>();
+    private List<int> waveEnemyIndices = new List<int>(); // 변경: 1차원 배열로 변경
     private float enemyAttackMultiplier;
     private float enemyHealthMultiplier;
     private float enemyAttackSpeedMultiplier;
     private int currentWaveIndex = -1;
-    private Coroutine spawnCoroutine;
     private HashSet<EnemyHealth> activeEnemies = new HashSet<EnemyHealth>();
+    private bool isWaveInProgress = false;
+    private bool isStageTransitioning = false;
 
     [SerializeField] private float _enemyDropGoldMultiplier = 1.0f;
     public float enemyDropGoldMultiplier => _enemyDropGoldMultiplier;
-    // 스테이지 변경 이벤트
+
     public event Action<int> OnStageChanged;
     public event Action OnAllStagesCompleted;
+    public event Action OnWaveCompleted;
+    public event Action<int> OnNewWaveStarted;
 
     private void Awake()
     {
@@ -49,10 +51,23 @@ public class WaveManager : MonoBehaviour
 
     public void StartStage(int stageNumber)
     {
+        if (isStageTransitioning)
+        {
+            Debug.Log("스테이지 전환 중에는 새로운 스테이지를 시작할 수 없습니다.");
+            return;
+        }
+        
+        // 게임 시작 시에만 OnStageChanged 호출
+        if (stageNumber == 1)
+        {
+            OnStageChanged?.Invoke(stageNumber);
+        }
+        
         currentStage = stageNumber;
         currentWaveIndex = -1;
         waveEnemyIndices.Clear();
-        
+        isWaveInProgress = false;
+    
         foreach (var enemy in activeEnemies)
         {
             if (enemy != null)
@@ -63,7 +78,13 @@ public class WaveManager : MonoBehaviour
         activeEnemies.Clear();
 
         LoadWaveData();
-        OnStageChanged?.Invoke(currentStage);
+    
+        if (waveEnemyIndices.Count == 0)
+        {
+            Debug.LogError($"Stage {stageNumber}의 웨이브 데이터가 비어있습니다!");
+            return;
+        }
+        
         StartNextWave();
     }
 
@@ -76,76 +97,44 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        enemyAttackMultiplier = Convert.ToSingle(waveData["enemyAttackMultiplier"]);
-        enemyHealthMultiplier = Convert.ToSingle(waveData["enemyHealthMultiplier"]);
-        enemyAttackSpeedMultiplier = Convert.ToSingle(waveData["enemyAttackSpeedMultiplier"]);
-
-        _enemyDropGoldMultiplier = Convert.ToSingle(waveData["enemyGoldMultiplier"]);
-
-        var wavesValue = waveData["waves"];
-        
-        if (wavesValue is int[] intArray)
+        try
         {
-            waveEnemyIndices.Add(intArray);
-        }
-        else
-        {
-            Debug.LogError($"Unexpected waves data type: {wavesValue?.GetType()}");
-        }
-    }
+            // 멀티플라이어 데이터 로드
+            enemyAttackMultiplier = Convert.ToSingle(waveData["enemyAttackMultiplier"]);
+            enemyHealthMultiplier = Convert.ToSingle(waveData["enemyHealthMultiplier"]);
+            enemyAttackSpeedMultiplier = Convert.ToSingle(waveData["enemyAttackSpeedMultiplier"]);
+            _enemyDropGoldMultiplier = Convert.ToSingle(waveData["enemyGoldMultiplier"]);
 
-    public void RegisterEnemy(EnemyHealth enemy)
-    {
-        activeEnemies.Add(enemy);
-        enemy.OnEnemyDeath += () => RemoveEnemy(enemy);
-    }
+            // waves 데이터 처리
+            var wavesValue = waveData["waves"];
+            waveEnemyIndices.Clear();
 
-    private void RemoveEnemy(EnemyHealth enemy)
-    {
-        activeEnemies.Remove(enemy);
-        
-        // 현재 웨이브의 스폰이 완료되고 모든 적이 죽었다면
-        if (spawnCoroutine == null && activeEnemies.Count == 0)
-        {
-            // 다음 웨이브가 있다면 다음 웨이브 시작
-            if (HasNextWave())
+            if (wavesValue is int[] intArray)
             {
-                StartCoroutine(StartNextWaveWithDelay());
+                waveEnemyIndices.AddRange(intArray);
             }
-            // 다음 웨이브가 없다면 다음 스테이지로
-            else
+            else if (wavesValue is ArrayList arrayList)
             {
-                StartCoroutine(StartNextStageWithDelay());
+                foreach (var item in arrayList)
+                {
+                    if (item is int intValue)
+                    {
+                        waveEnemyIndices.Add(intValue);
+                    }
+                }
             }
         }
-    }
-
-    private IEnumerator StartNextWaveWithDelay()
-    {
-        yield return new WaitForSeconds(nextWaveDelay);
-        StartNextWave();
-    }
-
-    private IEnumerator StartNextStageWithDelay()
-    {
-        yield return new WaitForSeconds(nextStageDelay);
-        
-        if (currentStage < maxStage)
+        catch (Exception e)
         {
-            StartStage(currentStage + 1);
-        }
-        else
-        {
-            Debug.Log("모든 스테이지를 완료했습니다!");
-            OnAllStagesCompleted?.Invoke();
+            Debug.LogError($"Error loading wave data: {e.Message}\n{e.StackTrace}");
         }
     }
 
     public bool StartNextWave()
     {
-        if (spawnCoroutine != null)
+        if (isWaveInProgress)
         {
-            StopCoroutine(spawnCoroutine);
+            return false;
         }
 
         currentWaveIndex++;
@@ -154,21 +143,16 @@ public class WaveManager : MonoBehaviour
             return false;
         }
 
-        spawnCoroutine = StartCoroutine(SpawnWaveEnemiesSequentially());
+        SpawnWaveEnemy();
+        OnNewWaveStarted?.Invoke(currentWaveIndex + 1);
+        isWaveInProgress = true;
         return true;
     }
 
-    private IEnumerator SpawnWaveEnemiesSequentially()
+    private void SpawnWaveEnemy()
     {
-        int[] enemyIndices = waveEnemyIndices[currentWaveIndex];
-
-        foreach (int enemyIndex in enemyIndices)
-        {
-            SpawnEnemy(enemyIndex);
-            yield return new WaitForSeconds(spawnInterval);
-        }
-
-        spawnCoroutine = null;
+        int enemyIndex = waveEnemyIndices[currentWaveIndex];
+        SpawnEnemy(enemyIndex);
     }
 
     private void SpawnEnemy(int enemyIndex)
@@ -184,9 +168,100 @@ public class WaveManager : MonoBehaviour
         );
     }
 
+    public void RegisterEnemy(EnemyHealth enemy)
+    {
+        activeEnemies.Add(enemy);
+        enemy.OnEnemyDeath += () => RemoveEnemy(enemy);
+    }
+
+    private void RemoveEnemy(EnemyHealth enemy)
+    {
+        activeEnemies.Remove(enemy);
+    
+        // 웨이브의 적이 모두 처치되었는지 확인
+        if (activeEnemies.Count == 0)
+        {
+            isWaveInProgress = false;
+            OnWaveCompleted?.Invoke();
+
+            // 전환 중이 아닐 때만 다음 웨이브/스테이지 처리
+            if (!isStageTransitioning)
+            {
+                if (HasNextWave())
+                {
+                    StartCoroutine(StartNextWaveWithDelay());
+                }
+                else
+                {
+                    StartCoroutine(StartNextStageWithDelay());
+                }
+            }
+        }
+    }
+
+    private IEnumerator StartNextWaveWithDelay()
+    {
+        yield return new WaitForSeconds(nextWaveDelay);
+        StartNextWave();
+    }
+
+    private IEnumerator StartNextStageWithDelay()
+    {
+        if (isStageTransitioning)
+        {
+            Debug.Log("이미 스테이지 전환 중입니다.");
+            yield break;
+        }
+
+        isStageTransitioning = true;
+        
+        yield return new WaitForSeconds(nextStageDelay);
+
+        if (currentStage < maxStage)
+        {
+            currentStage++;
+            
+            // 스테이지 변경 이벤트 발생
+            OnStageChanged?.Invoke(currentStage);
+            
+            // 웨이브 데이터 로드
+            LoadWaveData();
+            
+            // 배경 스크롤 시작
+            OnWaveCompleted?.Invoke();
+            
+            while (BackgroundScroller.Instance != null && BackgroundScroller.Instance.IsScrolling)
+            {
+                yield return null;
+            }
+            
+            // 다음 웨이브 시작 전에 잠시 대기
+            yield return new WaitForSeconds(0.5f);
+            
+            // 새로운 웨이브 시작 준비
+            currentWaveIndex = -1;
+            isWaveInProgress = false;
+            
+            // 전환 완료
+            isStageTransitioning = false;
+            
+            // 다음 웨이브 시작
+            StartNextWave();
+        }
+        else
+        {
+            isStageTransitioning = false;
+            Debug.Log("모든 스테이지를 완료했습니다!");
+            OnAllStagesCompleted?.Invoke();
+        }
+    }
+
+    // 상태 확인용 메서드들
     public int GetCurrentStage() => currentStage;
     public int GetCurrentWave() => currentWaveIndex + 1;
+    public int GetTotalWaves() => waveEnemyIndices.Count;
     public int GetRemainingEnemies() => activeEnemies.Count;
-    public bool IsCurrentWaveComplete() => spawnCoroutine == null && activeEnemies.Count == 0;
+    public bool IsCurrentWaveComplete() => !isWaveInProgress && activeEnemies.Count == 0;
     public bool HasNextWave() => currentWaveIndex < waveEnemyIndices.Count - 1;
+    public bool IsWaveInProgress() => isWaveInProgress;
 }

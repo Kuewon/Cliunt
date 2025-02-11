@@ -10,17 +10,19 @@ public class GameManager : MonoBehaviour
 
     public int totalGold = 0;
     [SerializeField] private TextMeshProUGUI goldText;
+    [SerializeField] private TextMeshProUGUI stageText;
     public GameObject damageTextObj;
 
     private void Awake()
     {
         totalGold = (int)PlayerPrefs.GetFloat($"USER_GOLD", 0);
-        goldText.SetText($"Gold : {totalGold.ToString()}");
+        goldText.SetText($"{totalGold.ToString()}");
     }
 
     void Start()
     {
-        
+        WaveManager.Instance.OnStageChanged += OnUpdateStage;
+        OnUpdateStage(WaveManager.Instance.GetCurrentStage());
     }
 
     // Update is called once per frame
@@ -42,6 +44,20 @@ public class GameManager : MonoBehaviour
     public void OnUpdateGold(int gold)
     {
         totalGold += gold;
-        goldText.SetText($"Gold : {totalGold.ToString()}");
+        goldText.SetText($"{totalGold.ToString()}");
+    }
+    
+    public void OnUpdateStage(int stage)
+    {
+        stageText.SetText($"Stage : {stage.ToString()}");
+    }
+    
+    void OnDestroy()
+    {
+        // Unsubscribe from the event when the GameManager is destroyed
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnStageChanged -= OnUpdateStage;
+        }
     }
 }

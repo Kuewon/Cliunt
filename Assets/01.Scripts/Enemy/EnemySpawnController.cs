@@ -7,21 +7,15 @@ public class EnemySpawnController : MonoBehaviour
     public static EnemySpawnController Instance { get; private set; }
 
     [Header("Spawn Settings")]
-    [SerializeField] private GameObject enemyPrefab;
-
-    [Header("Height Range")]
-    [SerializeField] private float minSpawnHeightPercentage = 0f;
-    [SerializeField] private float maxSpawnHeightPercentage = 0.7f;
-    [SerializeField] private float spawnXOffsetPercentage = 1.1f;
+    [SerializeField] private GameObject enemyPrefab; 
+    private float spawnXOffsetPercentage = 0.8f;
 
     [Header("Debug")]
     [SerializeField] private bool showSpawnRange = true;
 
-    [SerializeField] private float _enemyDropGold = 0;
-    public float enemyDropGold => _enemyDropGold;
-
-    private RectTransform canvasRect;
-    private Camera mainCamera;
+    private RectTransform topIngameRect;
+    private RectTransform playerRect;
+    private bool isStageTransitioning = false;
 
     private void Awake()
     {
@@ -32,118 +26,188 @@ public class EnemySpawnController : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
+        }
+
+        ValidateComponents();
+    }
+    private void Start()
+    {
+        if (WaveManager.Instance != null)
+        {
+            // 스테이지 전환 시작 시
+            WaveManager.Instance.OnStageChanged += HandleStageChange;
+            
+            // 새로운 웨이브 시작 시 (스테이지 전환 완료 후)
+            WaveManager.Instance.OnNewWaveStarted += (wave) => {
+                isStageTransitioning = false;
+            };
         }
     }
 
-    private void Start()
+    private void ValidateComponents()
     {
-        GameObject topIngame = GameObject.FindGameObjectWithTag("TopIngame");
+        if (enemyPrefab == null)
+        {
+            Debug.LogError("Enemy Prefab이 할당되지 않았습니다!");
+        }
+
+        // TopIngame 태그로 오브젝트 찾기
+        GameObject topIngame = GameObject.FindWithTag("TopIngame");
         if (topIngame == null)
         {
             Debug.LogError("TopIngame 태그를 가진 오브젝트를 찾을 수 없습니다!");
             return;
         }
 
-        canvasRect = topIngame.GetComponent<RectTransform>();
-        if (canvasRect == null)
+        topIngameRect = topIngame.GetComponent<RectTransform>();
+        if (topIngameRect == null)
         {
-            Debug.LogError("TopIngame 오브젝트에 RectTransform 컴포넌트가 없습니다!");
+            Debug.LogError("TopIngame 오브젝트에 RectTransform이 없습니다!");
             return;
         }
 
-        mainCamera = Camera.main;
-        if (mainCamera == null)
+        // 플레이어 찾기
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player == null)
         {
-            Debug.LogError("Main Camera를 찾을 수 없습니다!");
+            Debug.LogError("Player 태그를 가진 오브젝트를 찾을 수 없습니다!");
+            return;
+        }
+
+        playerRect = player.GetComponent<RectTransform>();
+        if (playerRect == null)
+        {
+            Debug.LogError("Player 오브젝트에 RectTransform이 없습니다!");
             return;
         }
     }
 
     private Vector2 GetSpawnPosition()
     {
-        if (canvasRect == null || mainCamera == null) return Vector2.zero;
-
-        // 캔버스의 크기와 위치 정보 가져오기
-        Rect canvasRectSize = canvasRect.rect;
-        Vector2 canvasCenter = canvasRect.position;
-        
-        // 스폰 X 위치 계산 (캔버스 오른쪽 끝 기준)
-        float rightEdgeX = canvasCenter.x + (canvasRectSize.width * 0.5f);
-        float spawnX = rightEdgeX + (canvasRectSize.width * (spawnXOffsetPercentage - 1f));
-
-        // 높이 범위 계산
-        float minY = canvasCenter.y + (canvasRectSize.height * (-0.5f + minSpawnHeightPercentage));
-        float maxY = canvasCenter.y + (canvasRectSize.height * (-0.5f + maxSpawnHeightPercentage));
-        float randomY = UnityEngine.Random.Range(minY, maxY);
-
-        Debug.Log($"Spawn Position - X: {spawnX}, Y: {randomY}");
-        return new Vector2(spawnX, randomY);
-    }
-
-    public void SpawnEnemyWithStats(
-        Dictionary<string, object> enemyStats,
-        float healthMultiplier,
-        float attackMultiplier,
-        float attackSpeedMultiplier)
-    {
-        if (canvasRect == null) return;
-
-        // 스폰 위치 계산
-        Vector2 spawnPosition = GetSpawnPosition();
-
-        // 적 생성
-        GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-        enemy.transform.SetParent(canvasRect, false);
-
-        // 체력 설정
-        var health = enemy.GetComponent<EnemyHealth>();
-        if (health != null)
+        if (topIngameRect == null || playerRect == null)
         {
-            float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
-            health.SetMaxHealth(baseHealth * healthMultiplier);
+            ValidateComponents();
+            if (topIngameRect == null || playerRect == null)
+            {
+                Debug.LogError("필요한 컴포넌트가 없습니다!");
+                return Vector2.zero;
+            }
         }
 
-        // 이동 및 공격 설정
-        var moveController = enemy.GetComponent<EnemyMoveController>();
-        if (moveController != null)
+        float width = topIngameRect.rect.width;
+        float spawnX;
+        
+        if (isStageTransitioning)
         {
-            float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
-            float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
-            float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
-            float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
-            float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
+            // 스테이지 전환 중일 때는 현재 width의 80% 지점에서 스폰
+            spawnX = width * 0.8f;
+        }
+        else
+        {
+            // 첫 스테이지나 일반 웨이브에서는 현재 스테이지 끝 + 80% 지점에서 스폰
+            spawnX = width + (width * 0.8f);
+        }
+    
+        // 화면 중앙 기준으로 보정
+        spawnX = spawnX - (width / 2);
+        float spawnY = playerRect.anchoredPosition.y;
 
-            moveController.SetStats(
-                baseAttackDamage * attackMultiplier,
-                baseAttackSpeed * attackSpeedMultiplier,
-                movementSpeed,
-                attackRange,
-                gold
-            );
+        return new Vector2(spawnX, spawnY);
+    }
+
+
+    public void SpawnEnemyWithStats(
+    Dictionary<string, object> enemyStats,
+    float healthMultiplier,
+    float attackMultiplier,
+    float attackSpeedMultiplier)
+    {
+        if (enemyPrefab == null || topIngameRect == null)
+        {
+            Debug.LogError("필요한 컴포넌트가 없습니다!");
+            return;
+        }
+
+        try
+        {
+            Vector2 spawnPosition = GetSpawnPosition();
+
+            GameObject enemy = Instantiate(enemyPrefab, Vector3.zero, Quaternion.identity, topIngameRect);
+            
+            RectTransform enemyRect = enemy.GetComponent<RectTransform>();
+            if (enemyRect != null)
+            {
+                enemyRect.anchoredPosition = spawnPosition;
+                // 스폰될 때 왼쪽을 보도록 설정
+                Vector3 scale = enemyRect.localScale;
+                scale.x = -Mathf.Abs(scale.x);  // x 스케일을 음수로 만들어 왼쪽을 보도록
+                enemyRect.localScale = scale;
+            }
+
+            var health = enemy.GetComponent<EnemyHealth>();
+            if (health != null)
+            {
+                float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
+                health.SetMaxHealth(baseHealth * healthMultiplier);
+            }
+
+            var moveController = enemy.GetComponent<EnemyMoveController>();
+            if (moveController != null)
+            {
+                float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
+                float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
+                float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
+                float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
+                float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
+
+                moveController.SetStats(
+                    baseAttackDamage * attackMultiplier,
+                    baseAttackSpeed * attackSpeedMultiplier,
+                    movementSpeed,
+                    attackRange,
+                    gold
+                );
+            }
+
+            if (health != null && WaveManager.Instance != null)
+            {
+                WaveManager.Instance.RegisterEnemy(health);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error spawning enemy: {e.Message}\n{e.StackTrace}");
         }
     }
 
     private void OnDrawGizmos()
     {
-        if (!showSpawnRange || canvasRect == null) return;
+        if (!showSpawnRange || topIngameRect == null || playerRect == null) return;
 
-        // 캔버스의 크기와 위치 정보 가져오기
-        Rect canvasRectSize = canvasRect.rect;
-        Vector2 center = canvasRect.position;
-
-        float rightEdgeX = center.x + (canvasRectSize.width * 0.5f);
-        float spawnX = rightEdgeX + (canvasRectSize.width * (spawnXOffsetPercentage - 1f));
-
-        float minY = center.y + (canvasRectSize.height * (-0.5f + minSpawnHeightPercentage));
-        float maxY = center.y + (canvasRectSize.height * (-0.5f + maxSpawnHeightPercentage));
-
+        // 월드 스페이스 위치로 변환
+        Vector3 spawnPos = topIngameRect.TransformPoint(
+            new Vector3(topIngameRect.sizeDelta.x * spawnXOffsetPercentage, 
+                playerRect.anchoredPosition.y, 
+                0)
+        );
+    
         Gizmos.color = Color.yellow;
-        Vector3 lineStart = new Vector3(spawnX, minY, 0);
-        Vector3 lineEnd = new Vector3(spawnX, maxY, 0);
-        Gizmos.DrawLine(lineStart, lineEnd);
-
-        float sphereRadius = 20f;
-        Gizmos.DrawWireSphere(lineStart, sphereRadius);
-        Gizmos.DrawWireSphere(lineEnd, sphereRadius);
+        Gizmos.DrawWireSphere(spawnPos, 20f);
+    }
+    
+    private void HandleStageChange(int newStage)
+    {
+        // 첫 스테이지(stage 1)가 아닐 때만 전환 모드 활성화
+        isStageTransitioning = newStage > 1;
+    }
+    
+    private void OnDestroy()
+    {
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnStageChanged -= HandleStageChange;
+            WaveManager.Instance.OnNewWaveStarted -= (wave) => { isStageTransitioning = false; };
+        }
     }
 }

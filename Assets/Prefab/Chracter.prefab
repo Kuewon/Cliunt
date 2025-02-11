@@ -111,11 +111,7 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 0
-  baseAttackDamage: 10
-  baseAttackSpeed: 0.2
-  baseAttackRange: 1
-  baseCriticalChance: 0.1
-  baseCriticalMultiplier: 1.5
+  autoAttackSound: {fileID: 8300000, guid: 9c1aee3bcc1e0431a97b0c28e41e60e3, type: 3}
 --- !u!114 &5932504223982468194
 MonoBehaviour:
   m_ObjectHideFlags: 0
