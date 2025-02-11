@@ -1,19 +1,27 @@
 ﻿using UnityEngine;
-
 public class SpinnerController : MonoBehaviour
 {
-    public float dragThreshold = 12f;
-    public float smoothSpeed = 15f;
-    public float dampingRate = 0.95f;
-    public float spinMinVelocity = 15f;
-    public float spinStopThreshold = 1f;
-    public float dragRotationSpeed = 0.3f; // 드래그 중 회전 속도 계수 추가
+    private float smoothSpeed = 15f;
+    private float dampingRate = 0.993f;
+    private float spinMinVelocity = 15f;
+    private float spinStopThreshold = 40f;
+    private float dragRotationSpeed = 0.2f;
+
+    private float minimumDragDistance = 10f;  // 최소 드래그 거리
+    private float maxDragDistanceSpeed = 100f; // 드래그 거리에 따른 기본 속도의 최대값
+
+    private float shortDistance = 100f;
+    private float middleDistance = 200f;
+    private float longDistance = 200f;
+    private float shortAcceleration = 50f;  // 가속도 값도 전체적으로 낮춤
+    private float middleAcceleration = 300f;
+    private float longAcceleration = 1000f;
+
     private RectTransform rectTransform;
     private float targetAngularVelocity;
     public bool isDragging;
     private Vector2 lastMousePosition;
     private Vector2 dragStartPosition;
-    private Vector2 previousDragPosition;
     private float previousVelocity;
 
     private void Awake()
@@ -29,59 +37,80 @@ public class SpinnerController : MonoBehaviour
     public void CheckInputClick(Vector2 inputPosition)
     {
         isDragging = true;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, inputPosition, null, out lastMousePosition);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, inputPosition, null, out Vector2 localPos);
+        lastMousePosition = localPos / 1000f;
         dragStartPosition = lastMousePosition;
-        previousDragPosition = lastMousePosition;
         previousVelocity = targetAngularVelocity;
     }
 
     public void HandleDrag(Vector2 currentPosition)
     {
         if (Time.deltaTime <= 0) return;
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, currentPosition, null, out Vector2 localMousePos);
-
-        // 드래그 중일 때 천천히 회전
-        Vector2 delta = localMousePos - previousDragPosition;
-        float dragSpeed = Mathf.Abs(delta.x) * dragRotationSpeed;
-        rectTransform.Rotate(0, 0, -dragSpeed);
-
-        previousDragPosition = localMousePos;
-        lastMousePosition = localMousePos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, currentPosition, null, out Vector2 localPos);
+        lastMousePosition = localPos / 1000f;
     }
 
     public void OnDragEnd()
     {
         if (!isDragging) return;
-
         isDragging = false;
 
         float dragDistance = (lastMousePosition - dragStartPosition).magnitude;
-        float newSpeed = Mathf.Clamp(dragDistance * dragThreshold, 100f, 1000f);
+        Debug.Log($"Drag Distance: {dragDistance}");
 
-        targetAngularVelocity = Mathf.Abs(previousVelocity) + newSpeed;
-        targetAngularVelocity = Mathf.Min(targetAngularVelocity, 2000f);
+        // 최소 드래그 거리 체크
+        if (dragDistance < minimumDragDistance) return;
+
+        // 1. 드래그 거리에 따른 기본 속도 계산
+        float dragDistanceSpeed = Mathf.Min((dragDistance / longDistance) * maxDragDistanceSpeed, maxDragDistanceSpeed);
+
+        // 2. 거리에 따른 가속도 계산
+        float acceleration;
+        if (dragDistance < shortDistance)
+        {
+            acceleration = shortAcceleration;
+        }
+        else if (dragDistance <= middleDistance)
+        {
+            acceleration = middleAcceleration;
+        }
+        else
+        {
+            acceleration = longAcceleration;
+        }
+
+        // 3. 최종 속도 계산 (기본 속도 + 가속도)
+        float finalSpeed = dragDistanceSpeed + acceleration;
+        Debug.Log($"DragDistanceSpeed: {dragDistanceSpeed}, Acceleration: {acceleration}, FinalSpeed: {finalSpeed}");
+
+        targetAngularVelocity = Mathf.Abs(previousVelocity) + finalSpeed;
+        targetAngularVelocity = Mathf.Min(targetAngularVelocity, 6000f);
     }
 
     private void ApplyRotation()
     {
-        if (!isDragging)
+        if (Mathf.Abs(targetAngularVelocity) > spinMinVelocity)
         {
-            if (Mathf.Abs(targetAngularVelocity) > spinMinVelocity)
-            {
-                targetAngularVelocity *= dampingRate;
-            }
-            else
-            {
-                targetAngularVelocity *= dampingRate * 0.95f;
-            }
+            targetAngularVelocity *= dampingRate;
+        }
+        else
+        {
+            targetAngularVelocity *= dampingRate * 0.98f;
+        }
 
-            if (Mathf.Abs(targetAngularVelocity) < spinStopThreshold)
-            {
-                targetAngularVelocity = Mathf.Lerp(targetAngularVelocity, 0f, Time.deltaTime * 10f);
-            }
+        if (Mathf.Abs(targetAngularVelocity) < spinStopThreshold)
+        {
+            targetAngularVelocity = Mathf.Lerp(targetAngularVelocity, 0f, Time.deltaTime * 3f);
+        }
 
-            rectTransform.Rotate(0, 0, -targetAngularVelocity * Time.deltaTime);
+        rectTransform.Rotate(0, 0, -Mathf.Abs(targetAngularVelocity) * Time.deltaTime);
+
+        if (isDragging)
+        {
+            Vector2 delta = lastMousePosition - dragStartPosition;
+            float targetRotation = -Mathf.Abs(delta.x * dragRotationSpeed);
+            float smoothRotation = Mathf.Lerp(0, targetRotation, Time.deltaTime * smoothSpeed);
+            rectTransform.Rotate(0, 0, smoothRotation);
         }
     }
 }
