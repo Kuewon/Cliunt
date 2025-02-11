@@ -869,6 +869,8 @@ MonoBehaviour:
   toggleButton: {fileID: 0}
   redToggleImage: {fileID: 0}
   greenToggleImage: {fileID: 0}
+  toggleAnimationDuration: 0.3
+  toggleMoveDistance: 1080
 --- !u!1 &7865365618637833160
 GameObject:
   m_ObjectHideFlags: 0
