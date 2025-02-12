@@ -6,273 +6,365 @@ using DG.Tweening;
 
 public class BottomUIButtonsManager : MonoBehaviour
 {
-    [Header("UI Buttons")] [SerializeField]
-    private List<Button> buttons = new List<Button>();
+    [Header("Common UI Elements")] [SerializeField]
+    private List<Button> bottomButtons = new List<Button>();
 
-    [SerializeField] private Sprite xButtonSprite;
+    [SerializeField] private Sprite closeButtonSprite;
 
-    [Header("Popup Settings")] [SerializeField]
-    private GameObject popupPanel;
+    [Header("Upgrade Panel Settings")] [SerializeField]
+    private GameObject upgradePanel;
 
-    [SerializeField] private float popupSpeed = 0.5f;
-    [SerializeField] private float popupStartOffset = -600f;
+    [SerializeField] private float upgradePanelSpeed = 0.5f;
+    [SerializeField] private float upgradePanelStartOffset = -600f;
 
-    [Header("Second Button Animation")] [SerializeField]
-    private GameObject brownImage;
+    [Header("Weapon Upgrade Animation")] [SerializeField]
+    private GameObject weaponBottomImage;
 
-    [SerializeField] private GameObject redImage;
-    [SerializeField] private GameObject spinnerObject;
-    [SerializeField] private GameObject secondPopupPanel;
-    [SerializeField] private float secondButtonAnimSpeed = 0.5f;
-    [SerializeField] private float brownStartOffset = -300f;
-    [SerializeField] private float redStartOffset = 300f;
-    [SerializeField] private float collisionStopOffset = 30f;
-    [SerializeField] private float collisionBounceStrength = 50f;
-    [SerializeField] private float collisionBounceDuration = 0.2f;
+    [SerializeField] private GameObject weaponTopImage;
+    [SerializeField] private GameObject loadingSpinner;
+    [SerializeField] private GameObject weaponUpgradePanel;
+    [SerializeField] private float weaponAnimationSpeed = 0.5f;
+    [SerializeField] private float bottomImageStartOffset = -300f;
+    [SerializeField] private float topImageStartOffset = 300f;
+    [SerializeField] private float weaponCollisionOffset = 30f;
+    [SerializeField] private float weaponBounceStrength = 50f;
+    [SerializeField] private float weaponBounceDuration = 0.2f;
 
-    [Header("Spinner Settings")] [SerializeField]
-    private float spinnerStartScale = 5f;
+    [Header("Loading Spinner Settings")] [SerializeField]
+    private float spinnerInitialScale = 5f;
 
-    [SerializeField] private float spinnerScaleDuration = 0.3f;
-    [SerializeField] private float spinnerStartDelay = 0.15f;
+    [SerializeField] private float spinnerScaleTime = 0.3f;
+    [SerializeField] private float spinnerDelay = 0.15f;
+    [SerializeField] private GameObject revolverSpinnerImage;
+    [SerializeField] private GameObject cylinderSpinnerImage;
 
-    [Header("Second Button Toggle")] [SerializeField]
-    private Button toggleButton;
+    [Header("Weapon Tab Toggle")] [SerializeField]
+    private List<Button> tabButtons = new List<Button>();
 
-    [SerializeField] private GameObject redToggleImage;
-    [SerializeField] private GameObject greenToggleImage;
+    [SerializeField] private GameObject revolverTabImage;
+    [SerializeField] private GameObject cylinderTabImage;
+    [SerializeField] private GameObject bulletTabImage;
+    [SerializeField] private float tabAnimationDuration = 0.3f;
+    [SerializeField] private float tabSlideDistance = 100f;
 
-    private Button activeButton = null;
-    private Sprite previousSprite = null;
-    private Dictionary<Button, TMP_Text> buttonTextMap = new Dictionary<Button, TMP_Text>();
-    private bool isRedActive = true;
-    private bool isAnimating = false; // 🔹 애니메이션 진행 여부를 저장하는 변수
+    private Button currentActiveButton = null;
+    private Sprite previousButtonSprite = null;
+    private Dictionary<Button, TMP_Text> buttonToTextMap = new Dictionary<Button, TMP_Text>();
+    private bool isAnimationPlaying = false;
+    private int currentTabIndex = 0;
+    private GameObject[] tabImages;
+
+    private class TabSequence
+    {
+        public int previousTabIndex { get; private set; }
+        public int currentTabIndex { get; private set; }
+
+        public void UpdateSequence(int newIndex)
+        {
+            previousTabIndex = currentTabIndex;
+            currentTabIndex = newIndex;
+        }
+
+        public void Reset()
+        {
+            previousTabIndex = 0;
+            currentTabIndex = 0;
+        }
+    }
+
+    private TabSequence tabSequence;
 
     private void Start()
     {
-        InitializeButtons();
-        HideAllPopups();
-
-        isAnimating = false; // 🔹 버튼 입력 가능 상태로 초기화
-
-        // 🔹 초기 상태 설정 (빨간색이 기본적으로 보이고, 초록색은 오른쪽에서 대기)
-        isRedActive = true;
-        redToggleImage.SetActive(true);
-        greenToggleImage.SetActive(false);
-
-        RectTransform greenTransform = greenToggleImage.GetComponent<RectTransform>();
-        RectTransform redTransform = redToggleImage.GetComponent<RectTransform>();
-
-        // 🔹 초록색을 오른쪽 바깥에 배치하여 첫 번째 클릭 시 자연스럽게 이동하도록 설정
-        greenTransform.anchoredPosition = new Vector2(toggleMoveDistance, greenTransform.anchoredPosition.y);
-        redTransform.anchoredPosition = new Vector2(0, redTransform.anchoredPosition.y);
-
-        if (toggleButton != null)
-            toggleButton.onClick.AddListener(ToggleRedGreenImages);
+        InitializeUIButtons();
+        ResetAllPanels();
+        InitializeWeaponTab();
+        isAnimationPlaying = false;
+        tabSequence = new TabSequence();
     }
 
-    private void InitializeButtons()
+    private void InitializeUIButtons()
     {
-        foreach (var button in buttons)
+        foreach (var button in bottomButtons)
         {
-            button.onClick.AddListener(() => ToggleButton(button));
-            TMP_Text tmpText = button.GetComponentInChildren<TMP_Text>();
-            if (tmpText != null)
-                buttonTextMap[button] = tmpText;
+            button.onClick.AddListener(() => OnBottomButtonClick(button));
+            var buttonText = button.GetComponentInChildren<TMP_Text>();
+            if (buttonText != null)
+                buttonToTextMap[button] = buttonText;
         }
     }
 
-    public void ToggleButton(Button clickedButton)
+    private void InitializeWeaponTab()
     {
-        if (!buttons.Contains(clickedButton)) return;
+        tabImages = new GameObject[] { revolverTabImage, cylinderTabImage, bulletTabImage };
 
-        if (activeButton == clickedButton)
+        currentTabIndex = 0;
+        for (int i = 0; i < tabImages.Length; i++)
+        {
+            if (i == 0)
+            {
+                tabImages[i].SetActive(true);
+                tabImages[i].GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+            }
+            else
+            {
+                tabImages[i].SetActive(false);
+                tabImages[i].GetComponent<RectTransform>().anchoredPosition =
+                    new Vector2(tabSlideDistance, tabImages[i].GetComponent<RectTransform>().anchoredPosition.y);
+            }
+        }
+
+        for (int i = 0; i < tabButtons.Count; i++)
+        {
+            int index = i;
+            tabButtons[i].onClick.AddListener(() => OnTabButtonClick(index));
+        }
+    }
+
+    private void OnTabButtonClick(int targetIndex)
+    {
+        if (isAnimationPlaying || targetIndex == currentTabIndex) return;
+        isAnimationPlaying = true;
+
+        tabSequence.UpdateSequence(targetIndex);
+        UpdateTabButtonStates(targetIndex); // ✅ 버튼 강조 효과 즉시 적용
+
+        // ✅ 현재 탭과 타겟 탭 정보 가져오기
+        GameObject currentTab = tabImages[currentTabIndex];
+        GameObject targetTab = tabImages[targetIndex];
+
+        RectTransform currentTransform = currentTab.GetComponent<RectTransform>();
+        RectTransform targetTransform = targetTab.GetComponent<RectTransform>();
+
+        // ✅ 이동 방향 계산
+        float direction = Mathf.Sign(targetIndex - currentTabIndex);
+
+        // ✅ 타겟 탭 초기 위치 설정 및 활성화
+        targetTab.SetActive(true);
+        targetTransform.anchoredPosition = new Vector2(direction * tabSlideDistance, targetTransform.anchoredPosition.y);
+
+        // ✅ 스피너 이미지 업데이트를 위한 임시 인덱스 적용
+        if (weaponUpgradePanel.activeSelf)
+        {
+            int tempIndex = currentTabIndex;
+            currentTabIndex = targetIndex;
+            UpdateSpinnerImage();
+            currentTabIndex = tempIndex; // 원래 값 복구
+        }
+
+        // ✅ 애니메이션 처리
+        DOTween.Sequence()
+            .Append(currentTransform.DOAnchorPosX(-direction * tabSlideDistance, tabAnimationDuration).SetEase(Ease.OutQuad))
+            .Join(targetTransform.DOAnchorPosX(0, tabAnimationDuration).SetEase(Ease.OutQuad))
+            .OnComplete(() =>
+            {
+                //상단 팝업 애니메이션 동작이 끝나고 나서 동작할 기능
+                currentTab.SetActive(false);
+                currentTabIndex = targetIndex;
+                isAnimationPlaying = false;
+            });
+    }
+
+    private void OnBottomButtonClick(Button clickedButton)
+    {
+        if (!bottomButtons.Contains(clickedButton)) return;
+
+        if (currentActiveButton == clickedButton)
         {
             ResetButton(clickedButton);
-            HideAllPopups();
+            ResetAllPanels();
             return;
         }
 
-        HideAllPopups();
-        ActivateNewButton(clickedButton);
+        ResetAllPanels();
+        ActivateButton(clickedButton);
 
-        if (clickedButton == buttons[0]) ShowPopup();
-        else if (clickedButton == buttons[1]) PlayAnimation();
+        if (clickedButton == bottomButtons[0]) ShowUpgradePanel();
+        else if (clickedButton == bottomButtons[1]) PlayWeaponAnimation();
     }
 
-    private void HideAllPopups()
+    private void ResetAllPanels()
     {
-        popupPanel?.SetActive(false);
-        secondPopupPanel?.SetActive(false);
-        brownImage?.SetActive(false);
-        redImage?.SetActive(false);
-        spinnerObject?.SetActive(false);
+        upgradePanel?.SetActive(false);
+        weaponUpgradePanel?.SetActive(false);
+        weaponBottomImage?.SetActive(false);
+        weaponTopImage?.SetActive(false);
+        loadingSpinner?.SetActive(false);
+        revolverSpinnerImage?.SetActive(false);
+        cylinderSpinnerImage?.SetActive(false);
 
-        if (activeButton != null)
+        tabSequence?.Reset();
+        ResetTabState();
+
+        if (currentActiveButton != null)
         {
-            ResetButton(activeButton);
-            activeButton = null;
+            ResetButton(currentActiveButton);
+            currentActiveButton = null;
         }
     }
 
-    private void ResetButton(Button clickedButton)
+    private void ResetTabState()
     {
-        if (clickedButton.TryGetComponent(out Image clickedImage) && previousSprite != null)
+        if (tabImages == null || tabImages.Length == 0) return;
+
+        for (int i = 0; i < tabImages.Length; i++)
         {
-            clickedImage.sprite = previousSprite;
-            clickedImage.SetNativeSize();
+            tabImages[i].SetActive(false);
+            RectTransform tabTransform = tabImages[i].GetComponent<RectTransform>();
+            tabTransform.anchoredPosition = new Vector2(tabSlideDistance, tabTransform.anchoredPosition.y);
         }
 
-        if (buttonTextMap.TryGetValue(clickedButton, out TMP_Text clickedText))
-            clickedText.gameObject.SetActive(true);
+        currentTabIndex = 0;
+        tabImages[currentTabIndex].SetActive(true);
+        tabImages[currentTabIndex].GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+        // ✅ 팝업이 닫혔다가 다시 열릴 때 버튼 상태도 초기화
+        UpdateTabButtonStates(currentTabIndex);
     }
 
-    private void ActivateNewButton(Button clickedButton)
+    private void ResetButton(Button button)
     {
-        if (clickedButton.TryGetComponent(out Image clickedImage))
+        if (button.TryGetComponent(out Image buttonImage) && previousButtonSprite != null)
         {
-            previousSprite = clickedImage.sprite;
-            clickedImage.sprite = xButtonSprite;
-            clickedImage.SetNativeSize();
+            buttonImage.sprite = previousButtonSprite;
+            buttonImage.SetNativeSize();
         }
 
-        if (buttonTextMap.TryGetValue(clickedButton, out TMP_Text clickedText))
-            clickedText.gameObject.SetActive(false);
-
-        activeButton = clickedButton;
+        if (buttonToTextMap.TryGetValue(button, out TMP_Text buttonText))
+            buttonText.gameObject.SetActive(true);
     }
 
-    private void ShowPopup()
+    private void ActivateButton(Button button)
     {
-        if (popupPanel == null) return;
+        if (button.TryGetComponent(out Image buttonImage))
+        {
+            previousButtonSprite = buttonImage.sprite;
+            buttonImage.sprite = closeButtonSprite;
+            buttonImage.SetNativeSize();
+        }
 
-        popupPanel.SetActive(true);
-        RectTransform popupTransform = popupPanel.GetComponent<RectTransform>();
-        popupTransform.anchoredPosition = new Vector2(0, popupStartOffset);
-        popupTransform.DOAnchorPosY(0, popupSpeed).SetEase(Ease.OutBack);
+        if (buttonToTextMap.TryGetValue(button, out TMP_Text buttonText))
+            buttonText.gameObject.SetActive(false);
+
+        currentActiveButton = button;
     }
 
-    private void PlayAnimation()
+    private void ShowUpgradePanel()
     {
-        if (brownImage == null || redImage == null || spinnerObject == null || secondPopupPanel == null) return;
+        if (upgradePanel == null) return;
 
-        brownImage.SetActive(true);
-        redImage.SetActive(true);
-        secondPopupPanel.SetActive(true);
+        upgradePanel.SetActive(true);
+        RectTransform panelTransform = upgradePanel.GetComponent<RectTransform>();
+        panelTransform.anchoredPosition = new Vector2(0, upgradePanelStartOffset);
+        panelTransform.DOAnchorPosY(0, upgradePanelSpeed).SetEase(Ease.OutBack);
 
-        RectTransform brownTransform = brownImage.GetComponent<RectTransform>();
-        RectTransform redTransform = redImage.GetComponent<RectTransform>();
+        // ✅ 팝업이 열릴 때 항상 첫 번째 탭 버튼 강조
+        UpdateTabButtonStates(currentTabIndex);
+    }
 
-        brownTransform.anchoredPosition = new Vector2(0, brownStartOffset);
-        redTransform.anchoredPosition = new Vector2(0, redStartOffset);
+    private void PlayWeaponAnimation()
+    {
+        if (weaponBottomImage == null || weaponTopImage == null || loadingSpinner == null ||
+            weaponUpgradePanel == null) return;
 
-        brownTransform.DOAnchorPosY(collisionStopOffset, secondButtonAnimSpeed).SetEase(Ease.OutQuad);
-        redTransform.DOAnchorPosY(-collisionStopOffset, secondButtonAnimSpeed)
+        bool isInitialOpen = !weaponUpgradePanel.activeSelf;
+        weaponUpgradePanel.SetActive(true);
+
+        // 팝업 최초 오픈 시에만 로딩 스피너 활성화
+        if (isInitialOpen)
+        {
+            loadingSpinner.SetActive(true);
+            StartWeaponCollisionAnimation();
+        }
+
+        DOVirtual.DelayedCall(spinnerDelay, () => UpdateSpinnerImage(isInitialOpen));
+    }
+
+    private void StartWeaponCollisionAnimation()
+    {
+        weaponBottomImage.SetActive(true);
+        weaponTopImage.SetActive(true);
+
+        RectTransform bottomTransform = weaponBottomImage.GetComponent<RectTransform>();
+        RectTransform topTransform = weaponTopImage.GetComponent<RectTransform>();
+
+        bottomTransform.anchoredPosition = new Vector2(0, bottomImageStartOffset);
+        topTransform.anchoredPosition = new Vector2(0, topImageStartOffset);
+
+        bottomTransform.DOAnchorPosY(weaponCollisionOffset, weaponAnimationSpeed).SetEase(Ease.OutQuad);
+        topTransform.DOAnchorPosY(-weaponCollisionOffset, weaponAnimationSpeed)
             .SetEase(Ease.OutQuad)
-            .OnComplete(() => PlayBounceEffect(brownTransform, redTransform));
-
-        // 🚀 버튼 클릭 후 `spinnerStartDelay` 후 스피너 실행
-        DOVirtual.DelayedCall(spinnerStartDelay, () => StartSpinnerAnimation());
+            .OnComplete(() => PlayWeaponBounceEffect(bottomTransform, topTransform));
     }
 
-    private void PlayBounceEffect(RectTransform brownTransform, RectTransform redTransform)
+    private void PlayWeaponBounceEffect(RectTransform bottomTransform, RectTransform topTransform)
     {
-        Sequence collisionSequence = DOTween.Sequence();
+        Sequence bounceSequence = DOTween.Sequence();
 
-        float[] bounceStrengths =
-            { collisionBounceStrength, collisionBounceStrength * 0.6f, collisionBounceStrength * 0.3f };
-        float[] bounceDurations =
-            { collisionBounceDuration, collisionBounceDuration * 0.7f, collisionBounceDuration * 0.5f };
+        float[] bounceStrengths = { weaponBounceStrength, weaponBounceStrength * 0.6f, weaponBounceStrength * 0.3f };
+        float[] bounceDurations = { weaponBounceDuration, weaponBounceDuration * 0.7f, weaponBounceDuration * 0.5f };
 
         for (int i = 0; i < bounceStrengths.Length; i++)
         {
             float strength = bounceStrengths[i];
             float duration = bounceDurations[i];
 
-            collisionSequence.Append(brownTransform.DOAnchorPosY(collisionStopOffset - strength, duration)
+            bounceSequence.Append(bottomTransform.DOAnchorPosY(weaponCollisionOffset - strength, duration)
                 .SetEase(Ease.OutBack));
-            collisionSequence.Join(redTransform.DOAnchorPosY(-collisionStopOffset + strength, duration)
+            bounceSequence.Join(topTransform.DOAnchorPosY(-weaponCollisionOffset + strength, duration)
                 .SetEase(Ease.OutBack));
 
-            collisionSequence.Append(brownTransform.DOAnchorPosY(collisionStopOffset, duration * 0.8f)
+            bounceSequence.Append(bottomTransform.DOAnchorPosY(weaponCollisionOffset, duration * 0.8f)
                 .SetEase(Ease.InOutQuad));
-            collisionSequence.Join(redTransform.DOAnchorPosY(-collisionStopOffset, duration * 0.8f)
+            bounceSequence.Join(topTransform.DOAnchorPosY(-weaponCollisionOffset, duration * 0.8f)
                 .SetEase(Ease.InOutQuad));
         }
     }
 
-    private void StartSpinnerAnimation()
+    private void UpdateSpinnerImage(bool isInitialOpen = false)
     {
-        if (spinnerObject == null) return;
+        if (loadingSpinner == null) return;
 
-        spinnerObject.SetActive(true);
-        spinnerObject.transform.localScale = Vector3.one * spinnerStartScale;
+        // 리볼버 탭인 경우
+        if (currentTabIndex == 0)
+        {
+            revolverSpinnerImage.SetActive(true);
+            cylinderSpinnerImage.SetActive(false);
 
-        spinnerObject.transform.DOScale(Vector3.one, spinnerScaleDuration)
+            if (tabSequence.previousTabIndex != 0 || isInitialOpen)
+            {
+                PlaySpinnerAnimation();
+            }
+        }
+        // 실린더 또는 불릿 탭의 경우
+        else
+        {
+            revolverSpinnerImage.SetActive(false);
+            cylinderSpinnerImage.SetActive(true);
+
+            // 리볼버에서 전환되는 경우나 최초 오픈인 경우에만 애니메이션 실행
+            if (tabSequence.previousTabIndex == 0 || isInitialOpen)
+            {
+                PlaySpinnerAnimation();
+            }
+        }
+    }
+
+    private void PlaySpinnerAnimation()
+    {
+        loadingSpinner.transform.localScale = Vector3.one * spinnerInitialScale;
+        loadingSpinner.transform.DOScale(Vector3.one, spinnerScaleTime)
             .SetEase(Ease.OutQuad);
     }
 
-    [Header("Second Button Toggle Animation")] [SerializeField]
-    private float toggleAnimationDuration = 0.3f; // 토글 애니메이션 지속 시간
-
-    [SerializeField] private float toggleMoveDistance = 100f; // 토글 이동 거리 (픽셀 단위)
-
-    private void ToggleRedGreenImages()
+    private void UpdateTabButtonStates(int activeIndex)
     {
-        // 🔹 현재 실행 중인 애니메이션이 있다면 중복 실행 방지
-        if (isAnimating) return;
-
-        isAnimating = true; // 🔹 애니메이션 시작 → 입력 차단
-
-        float animationDuration = toggleAnimationDuration; // 애니메이션 지속 시간
-        float moveDistance = toggleMoveDistance; // 이동 거리 (픽셀 단위)
-
-        RectTransform redTransform = redToggleImage.GetComponent<RectTransform>();
-        RectTransform greenTransform = greenToggleImage.GetComponent<RectTransform>();
-
-        if (isRedActive)
+        for (int i = 0; i < tabButtons.Count; i++)
         {
-            // 🔹 초록색을 빨간색 오른쪽에 배치하여 붙여 놓음 (왼쪽으로 이동할 준비)
-            greenToggleImage.SetActive(true);
-            greenTransform.anchoredPosition = new Vector2(moveDistance, greenTransform.anchoredPosition.y);
-            redTransform.anchoredPosition = new Vector2(0, redTransform.anchoredPosition.y);
+            bool isActive = (i == activeIndex);
 
-            // 🔹 두 개의 이미지를 함께 왼쪽으로 이동
-            Sequence transitionSequence = DOTween.Sequence();
-            transitionSequence.Append(redTransform.DOAnchorPosX(-moveDistance, animationDuration)
-                .SetEase(Ease.OutQuad));
-            transitionSequence.Join(greenTransform.DOAnchorPosX(0, animationDuration).SetEase(Ease.OutQuad));
-            transitionSequence.OnComplete(() =>
-            {
-                redToggleImage.SetActive(false);
-                redTransform.anchoredPosition = new Vector2(0, redTransform.anchoredPosition.y);
-                greenTransform.anchoredPosition = new Vector2(0, greenTransform.anchoredPosition.y);
-                isAnimating = false; // 🔹 애니메이션 종료 → 입력 허용
-            });
-
-            isRedActive = !isRedActive;
-        }
-        else
-        {
-            // 🔹 빨간색을 초록색 왼쪽에 배치하여 붙여 놓음 (오른쪽으로 이동할 준비)
-            redToggleImage.SetActive(true);
-            redTransform.anchoredPosition = new Vector2(-moveDistance, redTransform.anchoredPosition.y);
-            greenTransform.anchoredPosition = new Vector2(0, greenTransform.anchoredPosition.y);
-
-            // 🔹 두 개의 이미지를 함께 오른쪽으로 이동
-            Sequence transitionSequence = DOTween.Sequence();
-            transitionSequence.Append(
-                greenTransform.DOAnchorPosX(moveDistance, animationDuration).SetEase(Ease.OutQuad));
-            transitionSequence.Join(redTransform.DOAnchorPosX(0, animationDuration).SetEase(Ease.OutQuad));
-            transitionSequence.OnComplete(() =>
-            {
-                greenToggleImage.SetActive(false);
-                greenTransform.anchoredPosition = new Vector2(0, greenTransform.anchoredPosition.y);
-                redTransform.anchoredPosition = new Vector2(0, redTransform.anchoredPosition.y);
-                isAnimating = false; // 🔹 애니메이션 종료 → 입력 허용
-            });
-
-            isRedActive = !isRedActive;
+            tabButtons[i].GetComponent<Image>().DOColor(isActive ? Color.white : new Color(0.7f, 0.7f, 0.7f), 0.2f);
+            tabButtons[i].transform.DOScale(isActive ? 1.2f : 1.0f, 0.2f).SetEase(Ease.OutBack);
         }
     }
 }
