@@ -105,11 +105,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15e671c34ab16cc4fafc57d80f0bfaf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 150
-  attackRange: 1
-  attackInterval: 1
-  attackDamage: 10
-  enemyDropGold: 10
 --- !u!114 &4281212759350656330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -123,7 +118,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthBar: {fileID: 1126019838302604701}
-  maxHealth: 100
+  damagePopupPrefab: {fileID: 2981994598835073314, guid: a5bab4ecf93ef334a9c7fdc2faf3eb1e, type: 3}
   normalHitColor: {r: 1, g: 1, b: 1, a: 1}
   criticalHitColor: {r: 1, g: 0, b: 0, a: 1}
   criticalHitPushForce: 0.2

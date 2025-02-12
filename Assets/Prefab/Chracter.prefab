@@ -125,6 +125,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthBar: {fileID: 2171694627781182894}
+  damagePopupPrefab: {fileID: 2981994598835073314, guid: a5bab4ecf93ef334a9c7fdc2faf3eb1e, type: 3}
 --- !u!222 &5753136231263627026
 CanvasRenderer:
   m_ObjectHideFlags: 0

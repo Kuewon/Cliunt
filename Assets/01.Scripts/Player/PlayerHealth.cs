@@ -3,11 +3,14 @@ using UnityEngine;
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Components")]
-    [SerializeField] private HealthBar healthBar;  // Inspector에서 할당
+    [SerializeField] private HealthBar healthBar;
+    [SerializeField] private DamagePopup damagePopupPrefab;  // 데미지 팝업 프리팹
+
     private float maxHealth;
     private float currentHealth;
     private HitEffect hitEffect;
     private bool isInitialized = false;
+    private Transform canvasTransform;  // TopIngame 캔버스 캐싱용
 
     private void Awake()
     {
@@ -15,6 +18,17 @@ public class PlayerHealth : MonoBehaviour
         if (hitEffect == null)
         {
             hitEffect = gameObject.AddComponent<HitEffect>();
+        }
+
+        // TopIngame 캔버스 찾아서 캐싱
+        GameObject canvasObj = GameObject.FindWithTag("TopIngame");
+        if (canvasObj != null)
+        {
+            canvasTransform = canvasObj.transform;
+        }
+        else
+        {
+            Debug.LogError("TopIngame 태그를 가진 캔버스를 찾을 수 없습니다!");
         }
     }
 
@@ -85,7 +99,7 @@ public class PlayerHealth : MonoBehaviour
         }
 
         currentHealth = Mathf.Max(0, currentHealth - damage);
-        
+
         if (healthBar != null)
         {
             healthBar.UpdateHealth(currentHealth);
@@ -96,7 +110,16 @@ public class PlayerHealth : MonoBehaviour
             hitEffect.PlayHitEffect();
         }
 
-        DamagePopup.Create(transform.position, damage);
+        // 데미지 팝업 생성
+        if (damagePopupPrefab != null && canvasTransform != null)
+        {
+            // 데미지를 받은 위치보다 약간 위에 표시
+            Vector3 popupPosition = transform.position + Vector3.up * 0.5f;
+
+            // 프리팹 생성 및 설정
+            DamagePopup popup = Instantiate(damagePopupPrefab, canvasTransform);
+            popup.Setup(popupPosition, damage);
+        }
 
         if (currentHealth <= 0)
         {
