@@ -827,7 +827,7 @@ PrefabInstance:
     - target: {fileID: 3047082454573118393, guid: 5ccca0b3e4ebd43b1adfee9745658dd3, type: 3}
       propertyPath: goldText
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 4141233127733352622}
     - target: {fileID: 3047082454573118393, guid: 5ccca0b3e4ebd43b1adfee9745658dd3, type: 3}
       propertyPath: stageText
       value: 
@@ -907,11 +907,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1965710323454405176, guid: 80e89dcf3847542018e32af107b5efcd, type: 3}
       propertyPath: m_AnchorMin.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1965710323454405176, guid: 80e89dcf3847542018e32af107b5efcd, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0.10622918
+      value: 0.06026799
       objectReference: {fileID: 0}
     - target: {fileID: 1965710323454405176, guid: 80e89dcf3847542018e32af107b5efcd, type: 3}
       propertyPath: m_SizeDelta.x
@@ -1083,30 +1083,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1207112364}
     m_Modifications:
-    - target: {fileID: 147630892329979044, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 147630892329979044, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 147630892329979044, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 147630892329979044, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 147630892329979044, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 147630892329979044, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 167321848662909356, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1185,54 +1161,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 167321848662909356, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2526126710002111576, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2526126710002111576, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2526126710002111576, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2526126710002111576, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2526126710002111576, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2526126710002111576, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3404905966353070766, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3404905966353070766, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3404905966353070766, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3404905966353070766, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3404905966353070766, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3404905966353070766, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
-      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5225855354484661065, guid: 5dfe416c3e8ef4b168bc398847194b3a, type: 3}
@@ -1486,6 +1414,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+--- !u!114 &4141233127733352622 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1825093113686742592, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+  m_PrefabInstance: {fileID: 4141233127733352621}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &4248927544001532358 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 551316375149707820, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
@@ -1746,7 +1685,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4668241837067406837, guid: 51e1e0b2245b24da687cb6fd3e0a35c2, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0.904
+      value: 0.93900007
       objectReference: {fileID: 0}
     - target: {fileID: 4668241837067406837, guid: 51e1e0b2245b24da687cb6fd3e0a35c2, type: 3}
       propertyPath: m_AnchorMin.x

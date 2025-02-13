@@ -124,7 +124,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -17.100006, y: -27.999996}
+  m_AnchoredPosition: {x: -17.100006, y: -27.999998}
   m_SizeDelta: {x: -55, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6365962956203953340
@@ -433,7 +433,7 @@ GameObject:
   - component: {fileID: 623583594128426676}
   - component: {fileID: 723508016485106750}
   m_Layer: 5
-  m_Name: DiaIcon
+  m_Name: GoldIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -508,7 +508,7 @@ GameObject:
   - component: {fileID: 8363255716742998311}
   - component: {fileID: 1825093113686742592}
   m_Layer: 5
-  m_Name: DiaText
+  m_Name: GoldText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -717,7 +717,7 @@ GameObject:
   - component: {fileID: 2582656603187325070}
   - component: {fileID: 5799849352355935976}
   m_Layer: 5
-  m_Name: GoldIcon
+  m_Name: DiaIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1250,7 +1250,7 @@ GameObject:
   - component: {fileID: 3670119368131793786}
   - component: {fileID: 4352836249779502915}
   m_Layer: 5
-  m_Name: GoldText
+  m_Name: DiaText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1547,7 +1547,7 @@ GameObject:
   - component: {fileID: 2698257715127177290}
   - component: {fileID: 5611122508060552748}
   m_Layer: 5
-  m_Name: DiaBackground
+  m_Name: GoldBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1622,7 +1622,7 @@ GameObject:
   - component: {fileID: 3355943971157666511}
   - component: {fileID: 3750957038609595636}
   m_Layer: 5
-  m_Name: GoldBackground
+  m_Name: DiaBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
