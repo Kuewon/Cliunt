@@ -201,6 +201,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3428806570177285323, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
+      propertyPath: powerCurve
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3428806570177285323, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
+      propertyPath: dampingRate
+      value: 0.99
+      objectReference: {fileID: 0}
+    - target: {fileID: 3428806570177285323, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
+      propertyPath: maxAcceleration
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3428806570177285323, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
+      propertyPath: spinStopThreshold
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3428806570177285323, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
+      propertyPath: accelerationMultiplier
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 5688645801834881568, guid: 61cca9fddb2f7b2489844545a694ebde, type: 3}
       propertyPath: m_Name
       value: Spinner
