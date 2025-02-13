@@ -10,6 +10,11 @@ public class DamagePopup : MonoBehaviour
     [SerializeField] private Color criticalColor = Color.red;
     [SerializeField] private Material fontMaterial;
 
+    [Header("Outline Settings")]
+    [SerializeField] private bool enableOutline = true;
+    [SerializeField] private Color outlineColor = Color.black;
+    [SerializeField] private float outlineWidth = 0.2f;
+
     [Header("Animation Settings")]
     [SerializeField] private float lifetime = 1f;
     [SerializeField] private float moveSpeed = 300f;
@@ -33,6 +38,7 @@ public class DamagePopup : MonoBehaviour
         // 스크립트의 폰트 설정을 강제 적용
         ApplyFontSettings();
     }
+
     private void ApplyFontSettings()
     {
         if (textMesh != null)
@@ -47,6 +53,14 @@ public class DamagePopup : MonoBehaviour
             if (fontMaterial != null)
             {
                 textMesh.fontMaterial = fontMaterial;
+            }
+
+            // 외곽선 설정
+            if (enableOutline && textMesh.fontMaterial != null)
+            {
+                textMesh.fontMaterial.EnableKeyword("OUTLINE_ON");
+                textMesh.fontMaterial.SetFloat("_OutlineWidth", outlineWidth);
+                textMesh.fontMaterial.SetColor("_OutlineColor", outlineColor);
             }
 
             // 기타 텍스트 설정
@@ -83,6 +97,12 @@ public class DamagePopup : MonoBehaviour
             textMesh.color = criticalColor;
             transform.localScale *= 1.2f;
             textMesh.fontSize = fontSize * 1.2f;
+            
+            // 크리티컬일 때 외곽선 두께 증가
+            if (enableOutline && textMesh.fontMaterial != null)
+            {
+                textMesh.fontMaterial.SetFloat("_OutlineWidth", outlineWidth * 1.2f);
+            }
         }
         else
         {
