@@ -85,7 +85,7 @@ public class DamagePopup : MonoBehaviour
                 canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : Camera.main,
                 out Vector2 localPoint))
         {
-            localPoint.y -= 200f;
+            localPoint.y -= 350f;
             rectTransform.anchoredPosition = localPoint;
         }
 
