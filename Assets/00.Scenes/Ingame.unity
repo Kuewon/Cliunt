@@ -832,6 +832,10 @@ PrefabInstance:
       propertyPath: stageText
       value: 
       objectReference: {fileID: 5445663283074304110}
+    - target: {fileID: 3047082454573118393, guid: 5ccca0b3e4ebd43b1adfee9745658dd3, type: 3}
+      propertyPath: diamondText
+      value: 
+      objectReference: {fileID: 4141233127733352623}
     - target: {fileID: 6385222271617137831, guid: 5ccca0b3e4ebd43b1adfee9745658dd3, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.23648505
@@ -1417,6 +1421,17 @@ PrefabInstance:
 --- !u!114 &4141233127733352622 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1825093113686742592, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+  m_PrefabInstance: {fileID: 4141233127733352621}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &4141233127733352623 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4352836249779502915, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
   m_PrefabInstance: {fileID: 4141233127733352621}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
