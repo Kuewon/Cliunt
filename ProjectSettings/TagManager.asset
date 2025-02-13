@@ -6,6 +6,8 @@ TagManager:
   tags:
   - SpinnerCircle
   - TopIngame
+  - Hammar
+  - SpinnerTrigger
   layers:
   - Default
   - TransparentFX
