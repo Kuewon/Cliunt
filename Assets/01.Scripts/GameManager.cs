@@ -6,60 +6,103 @@ using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    // Start is called before the first frame update
-
     public int totalGold = 0;
+    public int totalDiamonds = 0;
+    public int stage = 1;
+    
     [SerializeField] private TextMeshProUGUI goldText;
+    [SerializeField] private TextMeshProUGUI diamondText;
     [SerializeField] private TextMeshProUGUI stageText;
     public GameObject damageTextObj;
 
     private void Awake()
     {
-        totalGold = (int)PlayerPrefs.GetFloat($"USER_GOLD", 0);
-        goldText.SetText($"{totalGold.ToString()}");
+        // Load saved values
+        totalGold = (int)PlayerPrefs.GetFloat("USER_GOLD", 0);
+        totalDiamonds = (int)PlayerPrefs.GetFloat("USER_DIA", 0);
+        stage = (int)PlayerPrefs.GetFloat("USER_STAGE", 1);
+
+        // Update UI
+        UpdateGoldText();
+        UpdateDiamondText();
+        UpdateStageText();
     }
 
     void Start()
     {
-        WaveManager.Instance.OnStageChanged += OnUpdateStage;
-        OnUpdateStage(WaveManager.Instance.GetCurrentStage());
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnStageChanged += OnUpdateStage;
+            WaveManager.Instance.OnWaveCompleted += OnWaveCompleted;
+            OnUpdateStage(WaveManager.Instance.GetCurrentStage());
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void UpdateGoldText()
     {
-       // if(Input.GetMouseButtonDown(0))
-       // {
-        //    Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        //    RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero);
+        if (goldText != null)
+        {
+            goldText.SetText(totalGold.ToString());
+        }
+    }
 
-        //    if (hit.collider != null)
-        //    {
-        //        Debug.Log($"TEST :: Name :: {hit.collider.gameObject.name}");
-       //     }
-       // }
-        
+    private void UpdateDiamondText()
+    {
+        if (diamondText != null)
+        {
+            diamondText.SetText(totalDiamonds.ToString());
+        }
+    }
+
+    private void UpdateStageText()
+    {
+        if (stageText != null)
+        {
+            stageText.SetText($"Stage : {stage}");
+        }
     }
 
     public void OnUpdateGold(int gold)
     {
         totalGold += gold;
-        goldText.SetText($"{totalGold.ToString()}");
+        UpdateGoldText();
         PlayerPrefs.SetFloat("USER_GOLD", totalGold);
+    }
+
+    public void OnUpdateDiamonds(int diamonds)
+    {
+        totalDiamonds += diamonds;
+        UpdateDiamondText();
+        PlayerPrefs.SetFloat("USER_DIA", totalDiamonds);
     }
     
     public void OnUpdateStage(int stage)
     {
-        stageText.SetText($"Stage : {stage.ToString()}");
+        this.stage = stage;
+        UpdateStageText();
         PlayerPrefs.SetFloat("USER_STAGE", stage);
+    }
+
+    private void OnWaveCompleted()
+    {
+        // 스테이지의 마지막 웨이브인지 확인
+        if (WaveManager.Instance != null && WaveManager.Instance.IsCurrentWaveComplete() && !WaveManager.Instance.HasNextWave())
+        {
+            var stageData = GameData.Instance.GetRow("WaveInfo", stage - 1);
+            if (stageData != null && stageData.ContainsKey("stageClearDia"))
+            {
+                int clearDiamonds = System.Convert.ToInt32(stageData["stageClearDia"]);
+                OnUpdateDiamonds(clearDiamonds);
+            }
+        }
     }
     
     void OnDestroy()
     {
-        // Unsubscribe from the event when the GameManager is destroyed
         if (WaveManager.Instance != null)
         {
             WaveManager.Instance.OnStageChanged -= OnUpdateStage;
+            WaveManager.Instance.OnWaveCompleted -= OnWaveCompleted;
         }
     }
 }
