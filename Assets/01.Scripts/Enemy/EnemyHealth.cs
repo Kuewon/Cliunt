@@ -118,9 +118,11 @@ public class EnemyHealth : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = elapsed / pushDuration;
-            t = 1f - Mathf.Pow(1f - t, 3f);
-
-            transform.position = Vector3.Lerp(startPosition, targetPosition, t);
+            
+            // 더 강한 이징 효과 적용 (Cubic easing)
+            float easeOut = 1f - Mathf.Pow(1f - t, 3f);
+            
+            transform.position = Vector3.Lerp(startPosition, targetPosition, easeOut);
             yield return null;
         }
 
