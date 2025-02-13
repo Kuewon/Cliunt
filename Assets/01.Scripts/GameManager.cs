@@ -45,11 +45,13 @@ public class GameManager : MonoBehaviour
     {
         totalGold += gold;
         goldText.SetText($"{totalGold.ToString()}");
+        PlayerPrefs.SetFloat("USER_GOLD", totalGold);
     }
     
     public void OnUpdateStage(int stage)
     {
         stageText.SetText($"Stage : {stage.ToString()}");
+        PlayerPrefs.SetFloat("USER_STAGE", stage);
     }
     
     void OnDestroy()
