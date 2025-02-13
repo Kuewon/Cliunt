@@ -23,6 +23,7 @@ public class WaveManager : MonoBehaviour
     private HashSet<EnemyHealth> activeEnemies = new HashSet<EnemyHealth>();
     private bool isWaveInProgress = false;
     private bool isStageTransitioning = false;
+    public bool IsStageTransitioning => isStageTransitioning;
 
     [SerializeField] private float _enemyDropGoldMultiplier = 1.0f;
     public float enemyDropGoldMultiplier => _enemyDropGoldMultiplier;

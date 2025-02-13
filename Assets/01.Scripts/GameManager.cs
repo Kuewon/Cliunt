@@ -86,9 +86,12 @@ public class GameManager : MonoBehaviour
     private void OnWaveCompleted()
     {
         // 스테이지의 마지막 웨이브인지 확인
-        if (WaveManager.Instance != null && WaveManager.Instance.IsCurrentWaveComplete() && !WaveManager.Instance.HasNextWave())
+        if (WaveManager.Instance != null && 
+            WaveManager.Instance.IsCurrentWaveComplete() && 
+            !WaveManager.Instance.HasNextWave() &&
+            !WaveManager.Instance.IsStageTransitioning)
         {
-            var stageData = GameData.Instance.GetRow("WaveInfo", stage - 1);
+            var stageData = GameData.Instance.GetRow("WaveInfo", WaveManager.Instance.GetCurrentStage() - 1);
             if (stageData != null && stageData.ContainsKey("stageClearDia"))
             {
                 int clearDiamonds = System.Convert.ToInt32(stageData["stageClearDia"]);
