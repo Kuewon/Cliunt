@@ -36,6 +36,9 @@ public class PlayerHealth : MonoBehaviour
     {
         GoogleSheetsManager.OnDataLoadComplete += InitializeHealth;
 
+        // WaveManager의 OnStageChanged 이벤트에 구독
+        WaveManager.Instance.OnStageChanged += OnStageChanged;
+
         object baseHealthValue = GameData.Instance.GetValue("PlayerStats", 0, "baseHealth");
         if (baseHealthValue != null)
         {
@@ -90,6 +93,24 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    // 스테이지가 변경될 때 호출되는 메서드
+    private void OnStageChanged(int stage)
+    {
+        RestoreFullHealth();
+    }
+
+    // 체력을 최대치로 회복하는 메서드
+    public void RestoreFullHealth()
+    {
+        if (!isInitialized) return;
+
+        currentHealth = maxHealth;
+        if (healthBar != null)
+        {
+            healthBar.UpdateHealth(currentHealth);
+        }
+    }
+
     public void TakeDamage(float damage)
     {
         if (!isInitialized)
@@ -126,12 +147,17 @@ public class PlayerHealth : MonoBehaviour
 
     private void Die()
     {
-        var gold = FindObjectOfType<GameManager>().totalGold;
-        PlayerPrefs.SetFloat("USER_GOLD", gold);
+
     }
 
     private void OnDestroy()
     {
         GoogleSheetsManager.OnDataLoadComplete -= InitializeHealth;
+        
+        // WaveManager 이벤트 구독 해제
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnStageChanged -= OnStageChanged;
+        }
     }
 }
