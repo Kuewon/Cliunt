@@ -73,7 +73,6 @@ public class DamagePopup : MonoBehaviour
         {
             localPoint.y -= 200f;
             rectTransform.anchoredPosition = localPoint;
-            Debug.Log($"데미지팝업 위치 - x: {localPoint.x}, y: {localPoint.y}"); // 디버그용
         }
 
         // 텍스트 설정

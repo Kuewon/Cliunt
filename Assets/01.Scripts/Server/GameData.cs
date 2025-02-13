@@ -39,8 +39,6 @@ public class GameData
             Debug.LogError($"❌ `{sheetName}` 시트에서 인덱스 {index}를 찾을 수 없습니다. (총 {sheetData[sheetName].Count}개의 행 존재)");
             return null;
         }
-
-        Debug.Log($"🔹 `{sheetName}` 시트에서 인덱스 {index} 데이터 가져옴.");
         return sheetData[sheetName][index];
     }
 
@@ -61,8 +59,6 @@ public class GameData
             Debug.LogError($"❌ `{sheetName}` 시트에서 인덱스 {index}에 `{key}` 키가 존재하지 않습니다.");
             return null;
         }
-
-        Debug.Log($"✅ `{sheetName}` 시트에서 `{key}` 값 가져오기: {row[key]}");
         return row[key];
     }
 }
