@@ -7,6 +7,7 @@ public class EnemyHealth : MonoBehaviour
 
     [Header("Components")]
     [SerializeField] private HealthBar healthBar;  // Inspector에서 할당
+    [SerializeField] private DamagePopup damagePopupPrefab;
 
     [Header("Health Settings")]
     private float maxHealth = 100f;
@@ -80,7 +81,20 @@ public class EnemyHealth : MonoBehaviour
             }
         }
 
-        DamagePopup.Create(transform.position + Vector3.up * 0.5f, damage, isCritical);
+        if (damagePopupPrefab != null)
+        {
+            // 월드 좌표 설정 (캐릭터 약간 위쪽)
+            Vector3 worldPosition = transform.position;
+
+            // TopIngame 캔버스 찾기
+            GameObject canvasObj = GameObject.FindWithTag("TopIngame");
+            if (canvasObj != null)
+            {
+                // 프리팹 생성 및 설정
+                DamagePopup popup = Instantiate(damagePopupPrefab, canvasObj.transform);
+                popup.Setup(worldPosition, damage, isCritical);  // screenPosition 대신 worldPosition 전달
+            }
+        }
 
         if (currentHealth <= 0)
         {
