@@ -113,12 +113,9 @@ public class PlayerHealth : MonoBehaviour
         // 데미지 팝업 생성
         if (damagePopupPrefab != null && canvasTransform != null)
         {
-            // 데미지를 받은 위치보다 약간 위에 표시
-            Vector3 popupPosition = transform.position + Vector3.up * 0.5f;
-
-            // 프리팹 생성 및 설정
+            Vector3 worldPosition = transform.position;
             DamagePopup popup = Instantiate(damagePopupPrefab, canvasTransform);
-            popup.Setup(popupPosition, damage);
+            popup.Setup(worldPosition, damage);
         }
 
         if (currentHealth <= 0)

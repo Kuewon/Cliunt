@@ -60,33 +60,25 @@ public class DamagePopup : MonoBehaviour
     {
         this.isCritical = isCritical;
 
-        // 월드 좌표를 스크린 좌표로 변환
-        Camera mainCam = Camera.main;
-        if (mainCam == null) return;
-
-        // 월드 좌표를 스크린 포인트로 변환
-        Vector2 screenPoint = mainCam.WorldToScreenPoint(worldPosition);
-
-        // 캔버스의 스케일 조정을 고려한 위치 계산
+        // 캔버스 참조 가져오기
         Canvas canvas = GetComponentInParent<Canvas>();
-        if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            // 스크린 좌표를 캔버스 좌표로 변환
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvas.transform as RectTransform,
-                screenPoint,
-                null,
-                out Vector2 localPoint
-            );
+        if (canvas == null || Camera.main == null) return;
 
+        // 월드 좌표를 UI 좌표로 변환
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                (RectTransform)canvas.transform,
+                Camera.main.WorldToScreenPoint(worldPosition),
+                canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : Camera.main,
+                out Vector2 localPoint))
+        {
+            localPoint.y -= 200f;
             rectTransform.anchoredPosition = localPoint;
+            Debug.Log($"데미지팝업 위치 - x: {localPoint.x}, y: {localPoint.y}"); // 디버그용
         }
 
-        ApplyFontSettings();
-
-        // 텍스트 및 효과 설정
+        // 텍스트 설정
         textMesh.text = damageAmount.ToString("F1");
-
+    
         if (isCritical)
         {
             textMesh.color = criticalColor;
@@ -102,9 +94,8 @@ public class DamagePopup : MonoBehaviour
         textColor = textMesh.color;
         disappearTimer = lifetime;
 
-        // 이동 방향 설정 (약간 위쪽으로)
         float speedMultiplier = isCritical ? 1.5f : 1f;
-        moveVector = new Vector2(Random.Range(-0.5f, 0.5f), 1f).normalized * moveSpeed * speedMultiplier;
+        moveVector = new Vector2(Random.Range(-0.5f, 0.5f), 0.3f) * moveSpeed * speedMultiplier;
     }
 
     private void Update()
