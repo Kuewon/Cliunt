@@ -1,50 +1,116 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace _01.Scripts.Interaction
 {
     public class HammerController : MonoBehaviour
     {
-        private int _currentHitNumber = 1;
+        [Header("References")]
         [SerializeField] private RectTransform[] spinnerTriggers;
-        private RectTransform _myRect;
-        private bool _canTrigger = true;  // 연속 감지 방지용 플래그 추가
+        [SerializeField] private GaugeBar gaugeBar;  // ✅ GaugeBar 참조 추가
         
+        private RectTransform _myRect;
+        private Camera _uiCamera;
+        private Dictionary<int, Vector3> _previousPositions = new Dictionary<int, Vector3>();
+
+        private Queue<int> _hitQueue = new Queue<int>();
+        private Dictionary<int, bool> _canHit = new Dictionary<int, bool>();
+        private Dictionary<int, bool> _hasExitedHammer = new Dictionary<int, bool>();
+
+        private int _lastHitFrame = 0;
+        private const int MIN_FRAME_GAP = 5;
+        private const int EXIT_FRAME_THRESHOLD = 30;
+        private const int SAMPLE_POINTS = 15;
+        private const float SPEED_THRESHOLD = 300f;
+        
+        private bool _isFirstFrame = true;
+
         void Start()
         {
             _myRect = GetComponent<RectTransform>();
+            _uiCamera = Camera.main;
+
+            for (int i = 0; i < spinnerTriggers.Length; i++)
+            {
+                _previousPositions[i] = spinnerTriggers[i].position;
+                _canHit[i] = false;
+                _hasExitedHammer[i] = false;
+            }
         }
-        
+
         void Update()
         {
-            CheckTriggerProximity();
-        }
-        
-        private void CheckTriggerProximity()
-        {
-            // 월드 스페이스 위치 사용
-            Vector3 hammerPos = _myRect.position;
-            
-            foreach(RectTransform trigger in spinnerTriggers)
+            if (_isFirstFrame)
             {
-                Vector3 triggerPos = trigger.position;
-                float distance = Vector2.Distance(
-                    new Vector2(hammerPos.x, hammerPos.y),
-                    new Vector2(triggerPos.x, triggerPos.y)
-                );
+                _isFirstFrame = false;
+                return;
+            }
 
-                // 거리 체크 값을 좀 더 크게 조정
-                if(distance < 50f && _canTrigger)
+            if (_hitQueue.Count > 0 && Time.frameCount - _lastHitFrame >= MIN_FRAME_GAP)
+            {
+                int triggerIndex = _hitQueue.Dequeue();
+                Debug.Log($"✅ Hit {triggerIndex + 1} at Frame {Time.frameCount}");
+                _lastHitFrame = Time.frameCount;
+                
+                // ✅ Hit 발생 시 GaugeBar에 알림
+                gaugeBar?.IncreaseGauge();
+            }
+
+            for (int i = 0; i < spinnerTriggers.Length; i++)
+            {
+                Vector3 currentPosition = spinnerTriggers[i].position;
+                Vector3 previousPosition = _previousPositions[i];
+
+                float speed = Vector3.Distance(currentPosition, previousPosition) / Time.deltaTime;
+
+                if (_canHit[i] && _hasExitedHammer[i] &&
+                    (IsTouchingHammer(currentPosition) || MultiSampleCheck(previousPosition, currentPosition)))
                 {
-                    Debug.Log($"Hit {_currentHitNumber}");
-                    _currentHitNumber = (_currentHitNumber % 6) + 1;
-                    _canTrigger = false;  // 연속 감지 방지
-                    break;
+                    if (!_hitQueue.Contains(i))
+                    {
+                        _hitQueue.Enqueue(i);
+                        _canHit[i] = false;
+                        _hasExitedHammer[i] = false;
+                    }
                 }
-                else if(distance >= 50f)
+
+                if (!IsTouchingHammer(currentPosition))
                 {
-                    _canTrigger = true;  // 다시 감지 가능하도록 설정
+                    if (speed > SPEED_THRESHOLD)
+                    {
+                        _canHit[i] = true;
+                        _hasExitedHammer[i] = true;
+                    }
+                    else if (!_hasExitedHammer[i])
+                    {
+                        _hasExitedHammer[i] = true;
+                        _canHit[i] = true;
+                    }
+                }
+
+                _previousPositions[i] = currentPosition;
+            }
+        }
+
+        private bool IsTouchingHammer(Vector3 position)
+        {
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(_uiCamera, position);
+            return RectTransformUtility.RectangleContainsScreenPoint(_myRect, screenPoint, _uiCamera);
+        }
+
+        private bool MultiSampleCheck(Vector3 start, Vector3 end)
+        {
+            for (int j = 1; j <= SAMPLE_POINTS; j++)
+            {
+                float t = (float)j / (SAMPLE_POINTS + 1);
+                Vector3 interpolatedPosition = Vector3.Lerp(start, end, t);
+
+                if (IsTouchingHammer(interpolatedPosition))
+                {
+                    return true;
                 }
             }
+            return false;
         }
     }
 }
