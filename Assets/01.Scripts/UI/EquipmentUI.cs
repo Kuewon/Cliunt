@@ -18,11 +18,25 @@ public class EquipmentUI : MonoBehaviour
 
     [Header("Revolver Sprites")]
     [SerializeField] private Sprite[] revolverSprites;
+    
+    [Header("Cylinder List UI")]
+    [SerializeField] private Transform cylinderContentPanel;
+    [SerializeField] private GameObject cylinderPrefab;
+
+    [Header("Selected Cylinder UI")]
+    [SerializeField] private TMP_Text cylinderNameText;
+    [SerializeField] private TMP_Text cylinderGradeText;
+    [SerializeField] private TMP_Text cylinderDamageText;
+    [SerializeField] private TMP_Text cylinderDescriptionText;
+    [SerializeField] private TMP_Text cylinderLevelText;
+    [SerializeField] private TMP_Text cylinderEffectText;
 
     private void Start()
     {
-        LoadRevolverList(); // 전체 리볼버 목록 불러오기
-        UpdateRevolverUI(); // 현재 장착한 리볼버 표시
+        LoadRevolverList();
+        LoadCylinderList();
+        UpdateRevolverUI();
+        UpdateCylinderUI();
     }
 
     /// <summary>
@@ -108,6 +122,75 @@ public class EquipmentUI : MonoBehaviour
         }
     }
     
+    public void LoadCylinderList()
+    {
+        string sheetName = "Cylinder";
+        List<Dictionary<string, object>> cylinderDataList = GameData.Instance.GetSheet(sheetName);
+
+        if (cylinderDataList == null || cylinderDataList.Count == 0)
+        {
+            Debug.LogWarning($"⚠️ `{sheetName}` 시트에 데이터가 없습니다.");
+            return;
+        }
+
+        foreach (Transform child in cylinderContentPanel)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (var cylinderData in cylinderDataList)
+        {
+            if (cylinderData == null) continue;
+
+            int index = GameData.Instance.GetInt(sheetName, cylinderDataList.IndexOf(cylinderData), "Index");
+            string name = GameData.Instance.GetString(sheetName, cylinderDataList.IndexOf(cylinderData), "cylinderName", "이름 없음");
+            int grade = GameData.Instance.GetInt(sheetName, cylinderDataList.IndexOf(cylinderData), "cylinderGrade", 0);
+
+            GameObject newCylinderButton = Instantiate(cylinderPrefab, cylinderContentPanel);
+            
+            var gradeBackground = newCylinderButton.transform.Find("cylinderEquipmentItem_backgroungIMG")?.GetComponent<Image>();
+            if (gradeBackground != null)
+            {
+                gradeBackground.color = GetGradeColor(grade);
+            }
+
+            var buttonText = newCylinderButton.GetComponentInChildren<TMP_Text>();
+            if (buttonText != null)
+            {
+                buttonText.text = name;
+            }
+
+            var button = newCylinderButton.GetComponent<Button>();
+            if (button != null)
+            {
+                button.onClick.AddListener(() => EquipmentManager.Instance.EquipCylinder(index));
+            }
+        }
+    }
+    
+    public void UpdateCylinderUI()
+    {
+        int equippedIndex = EquipmentManager.Instance.GetEquippedCylinderIndex();
+        string sheetName = "Cylinder";
+
+        var cylinderData = GameData.Instance.GetRow(sheetName, equippedIndex);
+        if (cylinderData == null) return;
+
+        string name = GameData.Instance.GetString(sheetName, equippedIndex, "cylinderName", "이름 없음");
+        string grade = GetGradeText(GameData.Instance.GetInt(sheetName, equippedIndex, "cylinderGrade", 0));
+        float damage = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderBaseDamage", 0f);
+        string description = GameData.Instance.GetString(sheetName, equippedIndex, "cylinderDescription", "설명 없음");
+        int baseLevel = GameData.Instance.GetInt(sheetName, equippedIndex, "cylinderBaseLevel", 1);
+        float effect = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderBuffEffect", 0f);
+
+        if (cylinderNameText != null) cylinderNameText.text = name;
+        if (cylinderGradeText != null) cylinderGradeText.text = $"등급: {grade}";
+        if (cylinderDamageText != null) cylinderDamageText.text = $"기본 공격력: {damage:F1}";
+        if (cylinderDescriptionText != null) cylinderDescriptionText.text = description;
+        if (cylinderLevelText != null) cylinderLevelText.text = $"기본 레벨: {baseLevel}";
+        if (cylinderEffectText != null) cylinderEffectText.text = $"버프 효과: {effect:P1}";
+    }
+    
     private Color GetGradeColor(int grade)
     {
         return grade switch
@@ -119,6 +202,20 @@ public class EquipmentUI : MonoBehaviour
             4 => new Color(1f, 0.4f, 0.4f, 1f),     // 빨강
             5 => new Color(1f, 0.9f, 0.4f, 1f),     // 노랑
             _ => Color.white                         // 기본값
+        };
+    }
+    
+    private string GetGradeText(int grade)
+    {
+        return grade switch
+        {
+            0 => "일반",
+            1 => "고급",
+            2 => "희귀",
+            3 => "영웅",
+            4 => "전설",
+            5 => "신화",
+            _ => "알 수 없음"
         };
     }
 }

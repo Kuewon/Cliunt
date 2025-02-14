@@ -31,6 +31,7 @@ public class EquipmentManager : MonoBehaviour
 
     private UserDataManager userDataManager;
     private int equippedRevolverIndex = 0;
+    private int equippedCylinderIndex = 0;
 
     
     #endregion
@@ -59,6 +60,7 @@ public class EquipmentManager : MonoBehaviour
             Debug.Log($"🎮 EquipmentManager 초기화 - 신규 유저: {isNewUser}");
         }
         LoadRevolverData();
+        LoadCylinderData(); // 실린더 데이터도 로드
     }
     #endregion
 
@@ -71,6 +73,15 @@ public class EquipmentManager : MonoBehaviour
         
         // ✅ UI 자동 업데이트
         FindObjectOfType<EquipmentUI>()?.UpdateRevolverUI();
+    }
+    
+    public void EquipCylinder(int index)
+    {
+        LogEquipmentChange("실린더", equippedCylinderIndex, index);
+        equippedCylinderIndex = index;
+        SaveCylinderData();
+        
+        FindObjectOfType<EquipmentUI>()?.UpdateCylinderUI();
     }
     #endregion
 
@@ -114,10 +125,50 @@ public class EquipmentManager : MonoBehaviour
             Debug.LogError($"❌ 리볼버 데이터 저장 실패: {e.Message}");
         }
     }
+    
+    private void LoadCylinderData()
+    {
+        try
+        {
+            var userData = UserDataManager.GetCurrentUserData();
+            if (userData?.data == null) return;
+
+            equippedCylinderIndex = Convert.ToInt32(userData.data["playerCylinderIndex"]);
+            
+            if (showDebugLog)
+                Debug.Log($"✅ 실린더 데이터 로드 완료! 장착된 실린더: {equippedCylinderIndex}");
+
+            FindObjectOfType<EquipmentUI>()?.UpdateCylinderUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ 실린더 데이터 로드 실패: {e.Message}");
+        }
+    }
+    
+    private void SaveCylinderData()
+    {
+        try
+        {
+            var userData = UserDataManager.GetCurrentUserData();
+            if (userData?.data == null) return;
+
+            userData.data["playerCylinderIndex"] = equippedCylinderIndex;
+            UserDataManager.SaveUserData(userData);
+            
+            if (showDebugLog)
+                Debug.Log("✅ 실린더 데이터 저장 완료");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ 실린더 데이터 저장 실패: {e.Message}");
+        }
+    }
     #endregion
 
     #region Getters
     public int GetEquippedRevolverIndex() => equippedRevolverIndex;
+    public int GetEquippedCylinderIndex() => equippedCylinderIndex;
     #endregion
 
     #region Debug Helpers
