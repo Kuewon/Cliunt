@@ -25,6 +25,17 @@ namespace _01.Scripts.Interaction
         
         private bool _isFirstFrame = true;
 
+        private PlayerController playerController;
+
+        private void Awake()
+        {
+            playerController = FindObjectOfType<PlayerController>();
+            if (playerController == null)
+            {
+                Debug.LogError("CharacterController not found in the scene!");
+            }
+        }
+
         void Start()
         {
             _myRect = GetComponent<RectTransform>();
@@ -54,6 +65,12 @@ namespace _01.Scripts.Interaction
                 
                 // ✅ Hit 발생 시 GaugeBar에 알림
                 gaugeBar?.IncreaseGauge();
+
+                // ✅ Hit 발생 시 플레이어 공격 트리거
+                if (playerController != null)
+                {
+                    playerController.TriggerManualAttack();
+                }
             }
 
             for (int i = 0; i < spinnerTriggers.Length; i++)
