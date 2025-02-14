@@ -61,4 +61,115 @@ public class GameData
         }
         return row[key];
     }
+    
+    public List<Dictionary<string, object>> GetSheet(string sheetName)
+    {
+        if (sheetData.ContainsKey(sheetName))
+        {
+            return sheetData[sheetName];
+        }
+        Debug.LogError($"❌ `{sheetName}` 시트 데이터를 찾을 수 없습니다.");
+        return new List<Dictionary<string, object>>(); // 빈 리스트 반환 (에러 방지)
+    }
+    #region Safe Data Access Methods
+    /// <summary>
+    /// 안전하게 문자열 값을 가져오는 메서드
+    /// </summary>
+    public string GetString(string sheetName, int index, string key, string defaultValue = "")
+    {
+        try
+        {
+            var value = GetValue(sheetName, index, key);
+            return value?.ToString() ?? defaultValue;
+        }
+        catch
+        {
+            Debug.LogWarning($"⚠️ {sheetName}시트의 {index}행 {key} 문자열 변환 실패. 기본값 반환: {defaultValue}");
+            return defaultValue;
+        }
+    }
+
+    /// <summary>
+    /// 안전하게 정수 값을 가져오는 메서드
+    /// </summary>
+    public int GetInt(string sheetName, int index, string key, int defaultValue = 0)
+    {
+        try
+        {
+            var value = GetValue(sheetName, index, key);
+            if (value == null) return defaultValue;
+            
+            if (value is int intValue) return intValue;
+            if (int.TryParse(value.ToString(), out int result)) return result;
+            
+            return defaultValue;
+        }
+        catch
+        {
+            Debug.LogWarning($"⚠️ {sheetName}시트의 {index}행 {key} 정수 변환 실패. 기본값 반환: {defaultValue}");
+            return defaultValue;
+        }
+    }
+
+    /// <summary>
+    /// 안전하게 float 값을 가져오는 메서드
+    /// </summary>
+    public float GetFloat(string sheetName, int index, string key, float defaultValue = 0f)
+    {
+        try
+        {
+            var value = GetValue(sheetName, index, key);
+            if (value == null) return defaultValue;
+            
+            if (value is float floatValue) return floatValue;
+            if (float.TryParse(value.ToString(), out float result)) return result;
+            
+            return defaultValue;
+        }
+        catch
+        {
+            Debug.LogWarning($"⚠️ {sheetName}시트의 {index}행 {key} float 변환 실패. 기본값 반환: {defaultValue}");
+            return defaultValue;
+        }
+    }
+
+    /// <summary>
+    /// 안전하게 배열 값을 가져오는 메서드
+    /// </summary>
+    public T[] GetArray<T>(string sheetName, int index, string key, T[] defaultValue = null)
+    {
+        try
+        {
+            var value = GetValue(sheetName, index, key);
+            if (value == null) return defaultValue ?? Array.Empty<T>();
+            
+            if (value is T[] typedArray) return typedArray;
+            if (value is Array arr)
+            {
+                T[] result = new T[arr.Length];
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    result[i] = (T)Convert.ChangeType(arr.GetValue(i), typeof(T));
+                }
+                return result;
+            }
+            
+            return defaultValue ?? Array.Empty<T>();
+        }
+        catch
+        {
+            Debug.LogWarning($"⚠️ {sheetName}시트의 {index}행 {key} 배열 변환 실패. 기본값 반환");
+            return defaultValue ?? Array.Empty<T>();
+        }
+    }
+
+    /// <summary>
+    /// 시트의 특정 행이 존재하는지 확인
+    /// </summary>
+    public bool HasRow(string sheetName, int index)
+    {
+        if (!sheetData.ContainsKey(sheetName)) return false;
+        return index >= 0 && index < sheetData[sheetName].Count;
+    }
+    #endregion
 }
