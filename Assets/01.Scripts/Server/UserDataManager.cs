@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Newtonsoft.Json;  // ✅ Newtonsoft.Json 사용
+using Newtonsoft.Json;
 
 public class UserDataManager : MonoBehaviour
 {
-    public static event Action<bool> OnUserDataProcessed; // ✅ 유저 데이터 처리 완료 이벤트
-    
+    public static event Action<bool> OnUserDataProcessed; // 유저 데이터 처리 완료 이벤트
 
-    private static string userDataFilePath => Path.Combine(Application.persistentDataPath, "UserData.json");
+    private static string GetUserDataPath()
+    {
+        return Path.Combine(Application.persistentDataPath, "UserData.json");
+    }
 
     [Serializable]
     public class UserData
@@ -20,7 +22,7 @@ public class UserDataManager : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log($"📂 유저 데이터 파일 경로: {userDataFilePath}");
+        Debug.Log($"📂 유저 데이터 파일 경로: {GetUserDataPath()}");
         GoogleSheetsManager.OnDataLoadComplete += OnGameDataLoaded;
     }
 
@@ -28,13 +30,25 @@ public class UserDataManager : MonoBehaviour
     {
         Debug.Log("✅ Google 스프레드시트 데이터 로드 완료! 유저 데이터 검증을 시작합니다.");
 
-        bool isNewUser = ProcessUserData(); // ✅ 신규 유저 여부 체크
-        OnUserDataProcessed?.Invoke(isNewUser); // ✅ 매개변수 포함하여 호출
+        bool isNewUser = ProcessUserData();
+        OnUserDataProcessed?.Invoke(isNewUser);
+    }
+
+    public static UserData GetCurrentUserData()
+    {
+        string jsonData = File.ReadAllText(GetUserDataPath());
+        return JsonConvert.DeserializeObject<UserData>(jsonData);
+    }
+
+    public static void SaveUserData(UserData userData)
+    {
+        string jsonData = JsonConvert.SerializeObject(userData, Formatting.Indented);
+        File.WriteAllText(GetUserDataPath(), jsonData);
     }
 
     private bool ProcessUserData()
     {
-        bool isNewUser = !File.Exists(userDataFilePath);
+        bool isNewUser = !File.Exists(GetUserDataPath());
 
         if (isNewUser)
         {
@@ -47,7 +61,6 @@ public class UserDataManager : MonoBehaviour
             UpdateUserDataWithNewFields();
         }
 
-        // ✅ 신규 유저 여부를 이벤트로 전달
         OnUserDataProcessed?.Invoke(isNewUser);
         return isNewUser;
     }
@@ -73,21 +86,21 @@ public class UserDataManager : MonoBehaviour
         };
 
         SaveUserData(newUser);
-        Debug.Log($"✅ 새 유저 데이터 생성 완료!\n📂 저장 위치: {userDataFilePath}");
+        Debug.Log($"✅ 새 유저 데이터 생성 완료!\n📂 저장 위치: {GetUserDataPath()}");
     }
 
     private void UpdateUserDataWithNewFields()
     {
-        if (!File.Exists(userDataFilePath))
+        string filePath = GetUserDataPath();
+        if (!File.Exists(filePath))
         {
             Debug.LogError("❌ 유저 데이터 파일이 존재하지 않습니다. 새로 생성해야 합니다.");
             return;
         }
 
-        string jsonData = File.ReadAllText(userDataFilePath);
-        UserData existingUser = JsonConvert.DeserializeObject<UserData>(jsonData);
-
+        UserData existingUser = GetCurrentUserData();
         Dictionary<string, object> localSettings = GameData.Instance.GetRow("UserLocalBaseSetting", 0);
+        
         if (localSettings == null || localSettings.Count == 0)
         {
             Debug.LogError("❌ `UserLocalBaseSetting` 데이터를 찾을 수 없습니다! 기존 데이터 유지.");
@@ -112,22 +125,10 @@ public class UserDataManager : MonoBehaviour
         }
     }
 
-    private void SaveUserData(UserData userData)
-    {
-        try
-        {
-            string jsonData = JsonConvert.SerializeObject(userData, Formatting.Indented);
-            File.WriteAllText(userDataFilePath, jsonData);
-            Debug.Log($"✅ 유저 데이터 저장 완료: {userDataFilePath}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"❌ 유저 데이터 저장 중 오류 발생: {e.Message}");
-        }
-    }
-
     private void OnDestroy()
     {
         GoogleSheetsManager.OnDataLoadComplete -= OnGameDataLoaded;
     }
+    
+    
 }

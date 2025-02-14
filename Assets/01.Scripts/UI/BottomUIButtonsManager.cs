@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 
@@ -52,6 +53,12 @@ public class BottomUIButtonsManager : MonoBehaviour
     private Dictionary<Button, TMP_Text> buttonToTextMap = new Dictionary<Button, TMP_Text>();
     private bool isAnimationPlaying = false;
     private int currentTabIndex = 0;
+    
+    [Header("Tab Info Box Settings")]
+    [SerializeField] private Transform[] tabInfoBoxParents;  // 각 탭별 InfoBox 부모 오브젝트
+    [SerializeField] private float infoBoxRotateAmount = 15f;
+    [SerializeField] private float infoBoxRotateDuration = 0.4f;
+    [SerializeField] private float infoBoxReturnDelay = 0.1f;
     private GameObject[] tabImages;
 
     private class TabSequence
@@ -127,38 +134,40 @@ public class BottomUIButtonsManager : MonoBehaviour
         isAnimationPlaying = true;
 
         tabSequence.UpdateSequence(targetIndex);
-        UpdateTabButtonStates(targetIndex); // ✅ 버튼 강조 효과 즉시 적용
+        UpdateTabButtonStates(targetIndex);
 
-        // ✅ 현재 탭과 타겟 탭 정보 가져오기
         GameObject currentTab = tabImages[currentTabIndex];
         GameObject targetTab = tabImages[targetIndex];
-
         RectTransform currentTransform = currentTab.GetComponent<RectTransform>();
         RectTransform targetTransform = targetTab.GetComponent<RectTransform>();
 
-        // ✅ 이동 방향 계산
         float direction = Mathf.Sign(targetIndex - currentTabIndex);
 
-        // ✅ 타겟 탭 초기 위치 설정 및 활성화
+        // InfoBox 애니메이션 실행 및 Sequence 저장
+        Sequence infoBoxSequence = AnimateTabInfoBoxes(currentTabIndex, targetIndex);
+
         targetTab.SetActive(true);
         targetTransform.anchoredPosition = new Vector2(direction * tabSlideDistance, targetTransform.anchoredPosition.y);
 
-        // ✅ 스피너 이미지 업데이트를 위한 임시 인덱스 적용
         if (weaponUpgradePanel.activeSelf)
         {
             int tempIndex = currentTabIndex;
             currentTabIndex = targetIndex;
             UpdateSpinnerImage();
-            currentTabIndex = tempIndex; // 원래 값 복구
+            currentTabIndex = tempIndex;
         }
 
-        // ✅ 애니메이션 처리
-        DOTween.Sequence()
+        // 메인 탭 전환 애니메이션
+        Sequence mainSequence = DOTween.Sequence()
             .Append(currentTransform.DOAnchorPosX(-direction * tabSlideDistance, tabAnimationDuration).SetEase(Ease.OutQuad))
-            .Join(targetTransform.DOAnchorPosX(0, tabAnimationDuration).SetEase(Ease.OutQuad))
+            .Join(targetTransform.DOAnchorPosX(0, tabAnimationDuration).SetEase(Ease.OutQuad));
+
+        // 두 애니메이션 시퀀스를 하나로 합치기
+        DOTween.Sequence()
+            .Append(mainSequence)
+            .Join(infoBoxSequence)
             .OnComplete(() =>
             {
-                //상단 팝업 애니메이션 동작이 끝나고 나서 동작할 기능
                 currentTab.SetActive(false);
                 currentTabIndex = targetIndex;
                 isAnimationPlaying = false;
@@ -366,5 +375,59 @@ public class BottomUIButtonsManager : MonoBehaviour
             tabButtons[i].GetComponent<Image>().DOColor(isActive ? Color.white : new Color(0.7f, 0.7f, 0.7f), 0.2f);
             tabButtons[i].transform.DOScale(isActive ? 1.2f : 1.0f, 0.2f).SetEase(Ease.OutBack);
         }
+    }
+    
+    private Sequence AnimateTabInfoBoxes(int fromIndex, int toIndex)
+    {
+        Sequence masterSequence = DOTween.Sequence();
+    
+        if (tabInfoBoxParents == null) return masterSequence;
+
+        float direction = Mathf.Sign(toIndex - fromIndex);
+
+        // 현재 탭의 InfoBox들 애니메이션
+        if (fromIndex < tabInfoBoxParents.Length && tabInfoBoxParents[fromIndex] != null)
+        {
+            foreach (Transform infoBox in tabInfoBoxParents[fromIndex])
+            {
+                masterSequence.Join(AnimateInfoBox(infoBox, direction));
+            }
+        }
+
+        // 이동할 탭의 InfoBox들 애니메이션
+        if (toIndex < tabInfoBoxParents.Length && tabInfoBoxParents[toIndex] != null)
+        {
+            foreach (Transform infoBox in tabInfoBoxParents[toIndex])
+            {
+                masterSequence.Join(AnimateInfoBox(infoBox, -direction));
+            }
+        }
+
+        return masterSequence;
+    }
+    
+    private Sequence AnimateInfoBox(Transform infoBox, float direction)
+    {
+        float targetRotation = -direction * infoBoxRotateAmount;
+    
+        Sequence infoBoxSequence = DOTween.Sequence();
+    
+        infoBoxSequence.Append(
+            infoBox.DOLocalRotate(
+                    new Vector3(0, 0, targetRotation), 
+                    infoBoxRotateDuration * 0.5f)
+                .SetEase(Ease.OutQuad)
+        );
+    
+        infoBoxSequence.AppendInterval(infoBoxReturnDelay);
+    
+        infoBoxSequence.Append(
+            infoBox.DOLocalRotate(
+                    Vector3.zero, 
+                    infoBoxRotateDuration)
+                .SetEase(Ease.OutElastic, 0.5f)
+        );
+
+        return infoBoxSequence;
     }
 }
