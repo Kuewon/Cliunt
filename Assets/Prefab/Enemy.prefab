@@ -121,7 +121,7 @@ MonoBehaviour:
   damagePopupPrefab: {fileID: 2981994598835073314, guid: a5bab4ecf93ef334a9c7fdc2faf3eb1e, type: 3}
   normalHitColor: {r: 1, g: 1, b: 1, a: 1}
   criticalHitColor: {r: 1, g: 0, b: 0, a: 1}
-  criticalHitPushForce: 0.2
+  criticalHitPushForce: 6
 --- !u!222 &2172926305830621427
 CanvasRenderer:
   m_ObjectHideFlags: 0
