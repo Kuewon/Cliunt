@@ -18,7 +18,6 @@ public class SpinnerController : MonoBehaviour
     [SerializeField] private float minForce = 10f; // 최소 힘 (작은 이동 시 적용)
     [SerializeField] private float maxForce = 2000f; // 최대 힘 (큰 이동 시 적용)
     [SerializeField] private float maxAcceleration = 1000f; // 한 번의 드래그에서 최대 가속량 제한
-    [SerializeField] private float accelerationDamping = 0.3f; // 속도 증가 억제 계수 (높을수록 억제)
     [SerializeField] private float powerCurve = 2.0f; // 힘이 증가하는 곡선 (낮을수록 선형, 높을수록 작은 이동 시 힘이 적게 적용됨)
 
     [Header("📏 해상도 조정")]
