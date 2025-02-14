@@ -13,7 +13,7 @@ public class PlayerController : MonoBehaviour
     [Header("Base Stats")]
     private float baseAttackDamage = 10f;
     private float baseAttackSpeed = 0.2f; // 초당 공격 횟수
-    private float baseAttackRange = 2f;
+    private float baseAttackRange = 3f;
     private float baseCriticalChance = 0.1f;
     private float baseCriticalMultiplier = 1.5f;
 
