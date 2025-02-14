@@ -42,7 +42,13 @@ public class UserDataManager : MonoBehaviour
 
     public static void SaveUserData(UserData userData)
     {
-        string jsonData = JsonConvert.SerializeObject(userData, Formatting.Indented);
+        var settings = new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            TypeNameHandling = TypeNameHandling.None  // 타입 정보를 제외하고 저장
+        };
+
+        string jsonData = JsonConvert.SerializeObject(userData, settings);
         File.WriteAllText(GetUserDataPath(), jsonData);
     }
 
@@ -71,12 +77,25 @@ public class UserDataManager : MonoBehaviour
 
         if (localSettings == null || localSettings.Count == 0)
         {
-            Debug.LogError("❌ `UserLocalBaseSetting` 데이터를 찾을 수 없습니다! 기본값을 사용합니다.");
-            localSettings = new Dictionary<string, object>
+            Debug.LogError("❌ `UserLocalBaseSetting` 데이터를 찾을 수 없습니다!");
+            localSettings = new Dictionary<string, object>();
+        }
+
+        // 필수 기본값들 확인 및 설정
+        if (!localSettings.ContainsKey("playerRevolverIndex")) localSettings["playerRevolverIndex"] = 0;
+        if (!localSettings.ContainsKey("playerCylinderIndex")) localSettings["playerCylinderIndex"] = 0;
+        if (!localSettings.ContainsKey("playerBulletIndex")) localSettings["playerBulletIndex"] = 0;
+
+        // 배열 데이터 처리
+        string[] gradeTypes = { "Revolver", "Cylinder", "Bullet" };
+        foreach (var type in gradeTypes)
+        {
+            for (int grade = 0; grade <= 5; grade++)
             {
-                { "level", 1 },
-                { "currency", 1000 }
-            };
+                string key = $"has_{grade}grade_{type}";
+                int[] arrayData = GameData.Instance.GetArray<int>("UserLocalBaseSetting", 0, key, new int[] { 0, 0, 0, 0 });
+                localSettings[key] = arrayData;
+            }
         }
 
         UserData newUser = new UserData

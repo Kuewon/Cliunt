@@ -108,7 +108,7 @@ public class GoogleSheetsManager : MonoBehaviour
     /// </summary>
     private void LoadSheetData(string sheetName)
     {
-        string range = $"{sheetName}!A1:Z";
+        string range = $"{sheetName}!A1:ZZ";
         var request = service.Spreadsheets.Values.Get(SpreadsheetId, range);
         ValueRange response;
 
