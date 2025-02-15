@@ -4,60 +4,56 @@ using System.Collections;
 
 public class GaugeBar : MonoBehaviour
 {
-    [SerializeField] private Slider gaugeSlider;  // Slider UI
-    [SerializeField] private float increaseAmount = 10f;  // Hit당 증가량
-    [SerializeField] private float maxGauge = 200f;  // 최대치
-    [SerializeField] private float currentGauge = 0f;  // 현재 게이지 수치
+    [SerializeField] private Slider gaugeSlider;
+    [SerializeField] private float increaseAmount = 10f;
+    [SerializeField] private float maxGauge = 200f;
+    private float targetGauge = 0f;
+    private float currentGauge = 0f;
 
     [Header("자동 감소 설정")]
-    [SerializeField] private float decreaseRate = 0.5f;  // 0.5%씩 감소
-    private float decreaseInterval = 0.1f;  // 0.1초 간격
-    private bool isMaxGauge = false;  // 최대 게이지 도달 여부를 체크하는 플래그
+    [SerializeField] private float decreaseRate = 0.5f;
+    private float decreaseInterval = 0.1f;
+    private bool isMaxGauge = false;
+    [SerializeField] private float smoothSpeed = 5f;
 
     private void Start()
     {
-        // 시작할 때 게이지 초기화
         gaugeSlider.minValue = 0f;
         gaugeSlider.maxValue = maxGauge;
-        gaugeSlider.value = currentGauge;  // 초기 게이지 값 설정
+        gaugeSlider.value = currentGauge;
 
-        // 자동 감소 시작
         StartCoroutine(AutoDecreaseGauge());
     }
 
-    // Hit이 발생했을 때 호출될 함수
+    private void Update()
+    {
+        gaugeSlider.value = Mathf.Lerp(gaugeSlider.value, targetGauge, Time.deltaTime * smoothSpeed);
+    }
+
     public void IncreaseGauge()
     {
-        // 최대 게이지 상태에서는 더 이상 증가하지 않음
         if (isMaxGauge) return;
-        
-        currentGauge = Mathf.Min(currentGauge + increaseAmount, maxGauge);
-        gaugeSlider.value = currentGauge;
 
-        // 최대 게이지 도달 체크
-        if (currentGauge >= maxGauge)
+        targetGauge = Mathf.Min(targetGauge + increaseAmount, maxGauge);
+
+        if (targetGauge >= maxGauge)
         {
             isMaxGauge = true;
-            Debug.Log("게이지가 가득 찼습니다!");
         }
     }
 
-    // 자동 감소 코루틴
     private IEnumerator AutoDecreaseGauge()
     {
         while (true)
         {
             yield return new WaitForSeconds(decreaseInterval);
 
-            // 최대 게이지에 도달한 경우에만 감소
-            if (isMaxGauge && currentGauge > 0)
+            if (isMaxGauge && targetGauge > 0)
             {
                 float decreaseValue = maxGauge * (decreaseRate / 100f);
-                currentGauge = Mathf.Max(0, currentGauge - decreaseValue);
-                gaugeSlider.value = currentGauge;
+                targetGauge = Mathf.Max(0, targetGauge - decreaseValue);
 
-                // 게이지가 0이 되면 최대 게이지 플래그 초기화
-                if (currentGauge <= 0)
+                if (targetGauge <= 0)
                 {
                     isMaxGauge = false;
                 }
@@ -65,6 +61,9 @@ public class GaugeBar : MonoBehaviour
         }
     }
 
-    // 현재 게이지 값을 가져오는 프로퍼티
-    public float CurrentGauge => currentGauge;
+    public float CurrentGauge => targetGauge;
+    public float GetMaxGauge()
+    {
+        return maxGauge;
+    }
 }

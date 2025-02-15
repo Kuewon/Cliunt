@@ -1,8 +1,11 @@
 using UnityEngine;
-using UnityEditor;
-using UnityEngine.SceneManagement;
-using UnityEditor.SceneManagement;
 
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
+
+#if UNITY_EDITOR
 public class Menu
 {
     [MenuItem("Custom/Load Lobby")]
@@ -19,3 +22,4 @@ public class Menu
         }
     }
 }
+#endif
