@@ -9108,10 +9108,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1207112364}
     m_Modifications:
-    - target: {fileID: 255307338571835181, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -27.999998
-      objectReference: {fileID: 0}
     - target: {fileID: 551316375149707820, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
       propertyPath: dimObject
       value: 
@@ -9223,10 +9219,6 @@ PrefabInstance:
     - target: {fileID: 6957127847745385770, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
       propertyPath: m_Name
       value: Top_UI
-      objectReference: {fileID: 0}
-    - target: {fileID: 6957127847745385770, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
