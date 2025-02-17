@@ -15,7 +15,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float nextWaveDelay = 2f;
     [SerializeField] private float nextStageDelay = 3f;
 
-    private List<int> waveEnemyIndices = new List<int>(); // 변경: 1차원 배열로 변경
+    private List<List<int>> waveEnemyIndices = new List<List<int>>();
     private float enemyAttackMultiplier;
     private float enemyHealthMultiplier;
     private float enemyAttackSpeedMultiplier;
@@ -106,24 +106,17 @@ public class WaveManager : MonoBehaviour
             enemyAttackSpeedMultiplier = Convert.ToSingle(waveData["enemyAttackSpeedMultiplier"]);
             _enemyDropGoldMultiplier = Convert.ToSingle(waveData["enemyGoldMultiplier"]);
 
-            // waves 데이터 처리
-            var wavesValue = waveData["waves"];
+            // 2차원 배열로 waves 데이터 가져오기
+            int[][] wavesArray = GameData.Instance.GetInt2DArray("WaveInfo", currentStage - 1, "waves");
             waveEnemyIndices.Clear();
 
-            if (wavesValue is int[] intArray)
+            // 각 웨이브 데이터를 List<int>로 변환하여 추가
+            foreach (int[] enemyGroup in wavesArray)
             {
-                waveEnemyIndices.AddRange(intArray);
+                waveEnemyIndices.Add(new List<int>(enemyGroup));
             }
-            else if (wavesValue is ArrayList arrayList)
-            {
-                foreach (var item in arrayList)
-                {
-                    if (item is int intValue)
-                    {
-                        waveEnemyIndices.Add(intValue);
-                    }
-                }
-            }
+
+            Debug.Log($"Stage {currentStage} 웨이브 데이터 로드 완료: 총 {waveEnemyIndices.Count}개 웨이브");
         }
         catch (Exception e)
         {
@@ -152,10 +145,25 @@ public class WaveManager : MonoBehaviour
 
     private void SpawnWaveEnemy()
     {
-        int enemyIndex = waveEnemyIndices[currentWaveIndex];
-        SpawnEnemy(enemyIndex);
+        if (currentWaveIndex < 0 || currentWaveIndex >= waveEnemyIndices.Count)
+        {
+            Debug.LogError("Invalid wave index!");
+            return;
+        }
+
+        var currentWave = waveEnemyIndices[currentWaveIndex];
+        StartCoroutine(SpawnWaveEnemiesSequentially(currentWave));
     }
 
+    private IEnumerator SpawnWaveEnemiesSequentially(List<int> enemyIndices)
+    {
+        foreach (int enemyIndex in enemyIndices)
+        {
+            SpawnEnemy(enemyIndex);
+        }
+        yield return null;
+    }
+    
     private void SpawnEnemy(int enemyIndex)
     {
         var enemyStats = GameData.Instance.GetRow("EnemyStats", enemyIndex);
