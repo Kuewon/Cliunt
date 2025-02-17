@@ -819,6 +819,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecdc3df3b4e4e4e7c87e6892782ee36e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  loadingUI: {fileID: 0}
+  lobbyUI: {fileID: 0}
+  progressBar: {fileID: 0}
+  showDebugLog: 1
 --- !u!4 &477496523
 Transform:
   m_ObjectHideFlags: 0
