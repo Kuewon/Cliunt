@@ -5,8 +5,10 @@ using System.Collections.Generic;
 public class PlayerController : MonoBehaviour
 {
     [Header("Components")]
-    [SerializeField] private Animator animator;
     [SerializeField] private Animator gunAnimator;
+    [SerializeField] private Animator bodyAnimator;
+    [SerializeField] private Animator frontHandAnimator;
+    [SerializeField] private Animator effectAnimator;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private AudioClip autoAttackSound;
 
@@ -32,17 +34,39 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        if (animator == null)
-        {
-            animator = GetComponent<Animator>();
-        }
-        
         if (gunAnimator == null)
         {
             Transform gunTransform = transform.Find("Gun");
             if (gunTransform != null)
             {
                 gunAnimator = gunTransform.GetComponent<Animator>();
+            }
+        }
+        
+        if (bodyAnimator == null)
+        {
+            Transform bodyTransform = transform.Find("Body");
+            if (bodyTransform != null)
+            {
+                bodyAnimator = bodyTransform.GetComponent<Animator>();
+            }
+        }
+        
+        if (frontHandAnimator == null)
+        {
+            Transform frontHandTransform = transform.Find("FrontHand");
+            if (frontHandTransform != null)
+            {
+                frontHandAnimator = frontHandTransform.GetComponent<Animator>();
+            }
+        }
+        
+        if (effectAnimator == null)
+        {
+            Transform effectTransform = transform.Find("GunEffect");
+            if (effectTransform != null)
+            {
+                effectAnimator = effectTransform.GetComponent<Animator>();
             }
         }
         
@@ -138,8 +162,8 @@ public class PlayerController : MonoBehaviour
     {
         isManualAttackPlaying = true;
 
-        animator.ResetTrigger(AUTOATTACK_TRIGGER);
-        animator.SetTrigger(MANUALATTACK_TRIGGER);
+        bodyAnimator.ResetTrigger(AUTOATTACK_TRIGGER);
+        bodyAnimator.SetTrigger(MANUALATTACK_TRIGGER);
         
         if (gunAnimator != null)
         {
@@ -147,7 +171,7 @@ public class PlayerController : MonoBehaviour
             gunAnimator.SetTrigger(MANUALATTACK_TRIGGER);
         }
 
-        float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
+        float animationLength = bodyAnimator.GetCurrentAnimatorStateInfo(0).length;
 
         yield return new WaitForSeconds(animationLength * 0.5f);
         PerformAttack("수동");
@@ -172,30 +196,23 @@ public class PlayerController : MonoBehaviour
                 {
                     lastAttackTime = elapsedTime;
 
-                    // 자동 공격 애니메이션 트리거
-                    animator.SetTrigger(AUTOATTACK_TRIGGER);
-                    if (gunAnimator != null)
-                    {
-                        gunAnimator.SetTrigger(AUTOATTACK_TRIGGER);
-                    }
-
                     // 자동 공격 사운드 재생
                     if (autoAttackSound != null)
                     {
                         AudioManager.Instance.PlaySFX(autoAttackSound);
                     }
 
-                    float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
-                    yield return new WaitForSeconds(animationLength);
+                    // 공격 애니메이션 길이만큼만 정확히 대기
+                    float attackAnimLength = gunAnimator.GetCurrentAnimatorStateInfo(0).length;
+                    yield return new WaitForSeconds(attackAnimLength);
 
                     PerformAttack("자동");
 
-                    yield return new WaitForSeconds(animationLength * 0.5f);
-
-                    float remainingInterval = attackInterval - animationLength;
-                    if (remainingInterval > 0)
+                    // 다음 공격까지 남은 시간 계산
+                    float remainingTime = attackInterval - attackAnimLength;
+                    if (remainingTime > 0)
                     {
-                        yield return new WaitForSeconds(remainingInterval);
+                        yield return new WaitForSeconds(remainingTime);
                     }
                 }
             }

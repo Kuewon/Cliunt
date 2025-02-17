@@ -131,12 +131,10 @@ public class PlayerHealth : MonoBehaviour
             hitEffect.PlayHitEffect();
         }
 
-        // 데미지 팝업 생성
-        if (damagePopupPrefab != null && canvasTransform != null)
+        DamagePopupManager popupManager = FindObjectOfType<DamagePopupManager>();
+        if (popupManager != null)
         {
-            Vector3 worldPosition = transform.position;
-            DamagePopup popup = Instantiate(damagePopupPrefab, canvasTransform);
-            popup.Setup(worldPosition, damage);
+            popupManager.ShowDamage(transform.position, damage);
         }
 
         if (currentHealth <= 0)
