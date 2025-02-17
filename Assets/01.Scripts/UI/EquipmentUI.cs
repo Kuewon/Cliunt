@@ -30,13 +30,27 @@ public class EquipmentUI : MonoBehaviour
     [SerializeField] private TMP_Text cylinderDescriptionText;
     [SerializeField] private TMP_Text cylinderLevelText;
     [SerializeField] private TMP_Text cylinderEffectText;
+    
+    [Header("Bullet List UI")]
+    [SerializeField] private Transform bulletContentPanel;
+    [SerializeField] private GameObject bulletPrefab;
+
+    [Header("Selected Bullet UI")]
+    [SerializeField] private TMP_Text bulletNameText;
+    [SerializeField] private TMP_Text bulletGradeText;
+    [SerializeField] private TMP_Text bulletDamageText;
+    [SerializeField] private TMP_Text bulletDescriptionText;
+    [SerializeField] private TMP_Text bulletLevelText;
+    [SerializeField] private TMP_Text bulletEffectText;
 
     private void Start()
     {
         LoadRevolverList();
         LoadCylinderList();
+        LoadBulletList();
         UpdateRevolverUI();
         UpdateCylinderUI();
+        UpdateBulletUI();
     }
 
     /// <summary>
@@ -189,6 +203,75 @@ public class EquipmentUI : MonoBehaviour
         if (cylinderDescriptionText != null) cylinderDescriptionText.text = description;
         if (cylinderLevelText != null) cylinderLevelText.text = $"기본 레벨: {baseLevel}";
         if (cylinderEffectText != null) cylinderEffectText.text = $"버프 효과: {effect:P1}";
+    }
+    
+    public void LoadBulletList()
+    {
+        string sheetName = "Bullet";
+        List<Dictionary<string, object>> bulletDataList = GameData.Instance.GetSheet(sheetName);
+
+        if (bulletDataList == null || bulletDataList.Count == 0)
+        {
+            Debug.LogWarning($"⚠️ `{sheetName}` 시트에 데이터가 없습니다.");
+            return;
+        }
+
+        foreach (Transform child in bulletContentPanel)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (var bulletData in bulletDataList)
+        {
+            if (bulletData == null) continue;
+
+            int index = GameData.Instance.GetInt(sheetName, bulletDataList.IndexOf(bulletData), "Index");
+            string name = GameData.Instance.GetString(sheetName, bulletDataList.IndexOf(bulletData), "bulletName", "이름 없음");
+            int grade = GameData.Instance.GetInt(sheetName, bulletDataList.IndexOf(bulletData), "bulletGrade", 0);
+
+            GameObject newBulletButton = Instantiate(bulletPrefab, bulletContentPanel);
+            
+            var gradeBackground = newBulletButton.transform.Find("bulletEquipmentItem_backgroungIMG")?.GetComponent<Image>();
+            if (gradeBackground != null)
+            {
+                gradeBackground.color = GetGradeColor(grade);
+            }
+
+            var buttonText = newBulletButton.GetComponentInChildren<TMP_Text>();
+            if (buttonText != null)
+            {
+                buttonText.text = name;
+            }
+
+            var button = newBulletButton.GetComponent<Button>();
+            if (button != null)
+            {
+                button.onClick.AddListener(() => EquipmentManager.Instance.EquipBullet(index));
+            }
+        }
+    }
+    
+    public void UpdateBulletUI()
+    {
+        int equippedIndex = EquipmentManager.Instance.GetEquippedBulletIndex();
+        string sheetName = "Bullet";
+
+        var bulletData = GameData.Instance.GetRow(sheetName, equippedIndex);
+        if (bulletData == null) return;
+
+        string name = GameData.Instance.GetString(sheetName, equippedIndex, "bulletName", "이름 없음");
+        string grade = GetGradeText(GameData.Instance.GetInt(sheetName, equippedIndex, "bulletGrade", 0));
+        float damage = GameData.Instance.GetFloat(sheetName, equippedIndex, "bulletBaseDamage", 0f);
+        string description = GameData.Instance.GetString(sheetName, equippedIndex, "bulletDescription", "설명 없음");
+        int baseLevel = GameData.Instance.GetInt(sheetName, equippedIndex, "bulletBaseLevel", 1);
+        float effect = GameData.Instance.GetFloat(sheetName, equippedIndex, "bulletBuffEffect", 0f);
+
+        if (bulletNameText != null) bulletNameText.text = name;
+        if (bulletGradeText != null) bulletGradeText.text = $"등급: {grade}";
+        if (bulletDamageText != null) bulletDamageText.text = $"기본 공격력: {damage:F1}";
+        if (bulletDescriptionText != null) bulletDescriptionText.text = description;
+        if (bulletLevelText != null) bulletLevelText.text = $"기본 레벨: {baseLevel}";
+        if (bulletEffectText != null) bulletEffectText.text = $"버프 효과: {effect:P1}";
     }
     
     private Color GetGradeColor(int grade)

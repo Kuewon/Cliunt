@@ -32,6 +32,7 @@ public class EquipmentManager : MonoBehaviour
     private UserDataManager userDataManager;
     private int equippedRevolverIndex = 0;
     private int equippedCylinderIndex = 0;
+    private int equippedBulletIndex = 0;
 
     
     #endregion
@@ -60,7 +61,8 @@ public class EquipmentManager : MonoBehaviour
             Debug.Log($"🎮 EquipmentManager 초기화 - 신규 유저: {isNewUser}");
         }
         LoadRevolverData();
-        LoadCylinderData(); // 실린더 데이터도 로드
+        LoadCylinderData();
+        LoadBulletData(); // 총알 데이터도 로드
     }
     #endregion
 
@@ -82,6 +84,15 @@ public class EquipmentManager : MonoBehaviour
         SaveCylinderData();
         
         FindObjectOfType<EquipmentUI>()?.UpdateCylinderUI();
+    }
+    
+    public void EquipBullet(int index)
+    {
+        LogEquipmentChange("총알", equippedBulletIndex, index);
+        equippedBulletIndex = index;
+        SaveBulletData();
+        
+        FindObjectOfType<EquipmentUI>()?.UpdateBulletUI();
     }
     #endregion
 
@@ -164,11 +175,52 @@ public class EquipmentManager : MonoBehaviour
             Debug.LogError($"❌ 실린더 데이터 저장 실패: {e.Message}");
         }
     }
+    
+    private void SaveBulletData()
+    {
+        try
+        {
+            var userData = UserDataManager.GetCurrentUserData();
+            if (userData?.data == null) return;
+
+            userData.data["playerBulletIndex"] = equippedBulletIndex;
+            UserDataManager.SaveUserData(userData);
+            
+            if (showDebugLog)
+                Debug.Log("✅ 총알 데이터 저장 완료");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ 총알 데이터 저장 실패: {e.Message}");
+        }
+    }
+    
+    private void LoadBulletData()
+    {
+        try
+        {
+            var userData = UserDataManager.GetCurrentUserData();
+            if (userData?.data == null) return;
+
+            equippedBulletIndex = Convert.ToInt32(userData.data["playerBulletIndex"]);
+            
+            if (showDebugLog)
+                Debug.Log($"✅ 총알 데이터 로드 완료! 장착된 총알: {equippedBulletIndex}");
+
+            FindObjectOfType<EquipmentUI>()?.UpdateBulletUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ 총알 데이터 로드 실패: {e.Message}");
+        }
+    }
     #endregion
 
     #region Getters
     public int GetEquippedRevolverIndex() => equippedRevolverIndex;
     public int GetEquippedCylinderIndex() => equippedCylinderIndex;
+    public int GetEquippedBulletIndex() => equippedBulletIndex; 
+    
     #endregion
 
     #region Debug Helpers
