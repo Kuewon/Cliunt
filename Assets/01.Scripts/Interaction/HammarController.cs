@@ -60,7 +60,7 @@ namespace _01.Scripts.Interaction
             if (_hitQueue.Count > 0 && Time.frameCount - _lastHitFrame >= MIN_FRAME_GAP)
             {
                 int triggerIndex = _hitQueue.Dequeue();
-                Debug.Log($"✅ Hit {triggerIndex + 1} at Frame {Time.frameCount}");
+                // Debug.Log($"✅ Hit {triggerIndex + 1} at Frame {Time.frameCount}");
                 _lastHitFrame = Time.frameCount;
                 
                 // ✅ Hit 발생 시 GaugeBar에 알림
