@@ -2,11 +2,14 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
+
 
 public class LobbyUIManager : MonoBehaviour
 {
-    public Button newGameButton;   // 신규 유저 버튼 (카툰 씬으로 이동)
-    public Button continueButton;  // 기존 유저 버튼 (인게임 씬으로 이동)
+    public Button newGameButton; // 신규 유저 버튼 (카툰 씬으로 이동)
+    public Button continueButton; // 기존 유저 버튼 (인게임 씬으로 이동)
+
 
     private void Start()
     {
@@ -25,6 +28,7 @@ public class LobbyUIManager : MonoBehaviour
         GoogleSheetsManager.OnDataLoadComplete += OnDataLoadComplete;
         UserDataManager.OnUserDataProcessed += EnableButtons;
     }
+
 
     private void OnDataLoadComplete()
     {
@@ -62,6 +66,7 @@ public class LobbyUIManager : MonoBehaviour
         Debug.Log("▶ 기존 유저 계속 진행! InGameScene으로 이동.");
         SceneManager.LoadScene("Ingame");
     }
+
 
     private void OnDestroy()
     {

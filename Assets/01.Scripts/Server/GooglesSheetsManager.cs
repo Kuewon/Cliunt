@@ -12,6 +12,11 @@ using System.Threading.Tasks;
 
 public class GoogleSheetsManager : MonoBehaviour
 {
+    
+    private void Awake()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
    public static event Action OnDataLoadComplete; // 데이터 로드 완료 이벤트
 
    private static readonly string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
