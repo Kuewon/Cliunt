@@ -81,19 +81,10 @@ public class EnemyHealth : MonoBehaviour
             }
         }
 
-        if (damagePopupPrefab != null)
+        DamagePopupManager popupManager = FindObjectOfType<DamagePopupManager>();
+        if (popupManager != null)
         {
-            // 월드 좌표 설정 (캐릭터 약간 위쪽)
-            Vector3 worldPosition = transform.position;
-
-            // TopIngame 캔버스 찾기
-            GameObject canvasObj = GameObject.FindWithTag("TopIngame");
-            if (canvasObj != null)
-            {
-                // 프리팹 생성 및 설정
-                DamagePopup popup = Instantiate(damagePopupPrefab, canvasObj.transform);
-                popup.Setup(worldPosition, damage, isCritical);  // screenPosition 대신 worldPosition 전달
-            }
+            popupManager.ShowDamage(transform.position, damage, isCritical);
         }
 
         if (currentHealth <= 0)
