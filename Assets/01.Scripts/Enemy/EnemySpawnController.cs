@@ -132,6 +132,9 @@ public class EnemySpawnController : MonoBehaviour
         try
         {
             Vector2 spawnPosition = GetSpawnPosition();
+            
+            float randomYOffset = UnityEngine.Random.Range(-50f, 50f);
+            spawnPosition.y += randomYOffset;
 
             GameObject enemy = Instantiate(enemyPrefab, Vector3.zero, Quaternion.identity, topIngameRect);
             
