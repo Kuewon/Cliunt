@@ -112,7 +112,7 @@ public class EnemyHealth : MonoBehaviour
         Vector3 targetPosition = transform.position + pushDirection * criticalHitPushForce;
 
         float elapsed = 0f;
-        float pushDuration = 0.2f;
+        float pushDuration = 0.6f;
         Vector3 startPosition = transform.position;
 
         while (elapsed < pushDuration)
