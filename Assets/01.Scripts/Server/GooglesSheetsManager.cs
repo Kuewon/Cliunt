@@ -245,6 +245,40 @@ public class GoogleSheetsManager : MonoBehaviour
                        System.Globalization.CultureInfo.InvariantCulture,
                        out float num) ? num : 0f)
                        .ToArray();
+           case "int[][]":
+               try
+               {
+                   value = value.Trim();
+                   // 맨 앞뒤 대괄호 제거
+                   if (value.StartsWith("[")) value = value.Substring(1);
+                   if (value.EndsWith("]")) value = value.Substring(0, value.Length - 1);
+                
+                   // 내부 배열들을 분리
+                   var arrays = value.Split(new[] { ']', '[' }, StringSplitOptions.RemoveEmptyEntries);
+                   List<int[]> result = new List<int[]>();
+                
+                   foreach (var array in arrays)
+                   {
+                       var trimmed = array.Trim(' ', ',');
+                       if (string.IsNullOrEmpty(trimmed)) continue;
+                    
+                       var numbers = trimmed.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                           .Select(x => int.TryParse(x.Trim(), out int num) ? num : 0)
+                           .ToArray();
+                    
+                       if (numbers.Length > 0)
+                       {
+                           result.Add(numbers);
+                       }
+                   }
+                
+                   return result.ToArray();
+               }
+               catch (Exception e)
+               {
+                   Debug.LogError($"2차원 배열 변환 중 오류 발생: {e.Message}");
+                   return Array.Empty<int[]>();
+               }
        }
        return null;
    }

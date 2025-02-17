@@ -62,6 +62,52 @@ public class GameData
         return row[key];
     }
     
+    /// <summary>
+    /// 안전하게 2차원 정수 배열을 가져오는 메서드
+    /// </summary>
+    public int[][] GetInt2DArray(string sheetName, int index, string key, int[][] defaultValue = null)
+    {
+        try
+        {
+            var value = GetValue(sheetName, index, key);
+            if (value == null) return defaultValue ?? Array.Empty<int[]>();
+            
+            if (value is int[][] typedArray) return typedArray;
+            if (value is Array arr)
+            {
+                List<int[]> result = new List<int[]>();
+                foreach (var item in arr)
+                {
+                    if (item is Array innerArr)
+                    {
+                        int[] innerResult = new int[innerArr.Length];
+                        for (int i = 0; i < innerArr.Length; i++)
+                        {
+                            if (int.TryParse(innerArr.GetValue(i).ToString(), out int num))
+                            {
+                                innerResult[i] = num;
+                            }
+                        }
+                        result.Add(innerResult);
+                    }
+                    else if (item is int singleInt)
+                    {
+                        // 단일 정수인 경우 길이 1의 배열로 처리
+                        result.Add(new int[] { singleInt });
+                    }
+                }
+                return result.ToArray();
+            }
+            
+            return defaultValue ?? Array.Empty<int[]>();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"⚠️ {sheetName}시트의 {index}행 {key} 2차원 배열 변환 실패. 기본값 반환. 오류: {e.Message}");
+            return defaultValue ?? Array.Empty<int[]>();
+        }
+    }
+    
     public List<Dictionary<string, object>> GetSheet(string sheetName)
     {
         if (sheetData.ContainsKey(sheetName))
