@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class PlayerController : MonoBehaviour
 {
@@ -29,8 +30,9 @@ public class PlayerController : MonoBehaviour
     private bool isManualAttackPlaying = false;
     private RectTransform rectTransform;
 
-    private const string AUTOATTACK_TRIGGER = "AutoAttack";
     private const string MANUALATTACK_TRIGGER = "ManualAttack";
+    private const string RUNAUTOATTACK_TRIGGER = "RunAutoAttack";
+    private const string RUNMANUALATTACK_TRIGGER = "RunManualAttack";
 
     private void Awake()
     {
@@ -161,15 +163,17 @@ public class PlayerController : MonoBehaviour
     private IEnumerator ManualAttackRoutine()
     {
         isManualAttackPlaying = true;
-
-        bodyAnimator.ResetTrigger(AUTOATTACK_TRIGGER);
+    
+        // 수동 공격을 위해 애니메이터 속도를 1로 복구
+        gunAnimator.speed = 1f;
+        bodyAnimator.speed = 1f;
+        frontHandAnimator.speed = 1f;
+        effectAnimator.speed = 1f;
+    
+        gunAnimator.SetTrigger(MANUALATTACK_TRIGGER);
         bodyAnimator.SetTrigger(MANUALATTACK_TRIGGER);
-        
-        if (gunAnimator != null)
-        {
-            gunAnimator.ResetTrigger(AUTOATTACK_TRIGGER);
-            gunAnimator.SetTrigger(MANUALATTACK_TRIGGER);
-        }
+        frontHandAnimator.SetTrigger(MANUALATTACK_TRIGGER);
+        effectAnimator.SetTrigger(MANUALATTACK_TRIGGER);
 
         float animationLength = bodyAnimator.GetCurrentAnimatorStateInfo(0).length;
 
@@ -179,12 +183,32 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(animationLength * 0.5f);
 
         isManualAttackPlaying = false;
+    
+        // 명시적으로 기본 상태의 길이를 가져옴
+        float autoAttackLength = bodyAnimator.runtimeAnimatorController.animationClips
+            .First(clip => clip.name == "body_idle").length;
+        float speedMultiplier = autoAttackLength / attackInterval;
+     
+        gunAnimator.speed = speedMultiplier;
+        bodyAnimator.speed = speedMultiplier;
+        frontHandAnimator.speed = speedMultiplier;
+        effectAnimator.speed = speedMultiplier;
     }
 
     private IEnumerator AutoAttackRoutine()
     {
         float elapsedTime = 0f;
         float lastAttackTime = 0f;
+
+        // 기본 애니메이션 속도 조절
+        float originalAnimLength = gunAnimator.GetCurrentAnimatorStateInfo(0).length;
+        float speedMultiplier = originalAnimLength / attackInterval;
+    
+        // 모든 애니메이터의 속도 설정
+        gunAnimator.speed = speedMultiplier;
+        bodyAnimator.speed = speedMultiplier;
+        frontHandAnimator.speed = speedMultiplier;
+        effectAnimator.speed = speedMultiplier;
 
         while (true)
         {
@@ -202,35 +226,22 @@ public class PlayerController : MonoBehaviour
                         AudioManager.Instance.PlaySFX(autoAttackSound);
                     }
 
-                    // 공격 애니메이션 길이만큼만 정확히 대기
-                    float attackAnimLength = gunAnimator.GetCurrentAnimatorStateInfo(0).length;
-                    yield return new WaitForSeconds(attackAnimLength);
-
                     PerformAttack("자동");
-
-                    // 다음 공격까지 남은 시간 계산
-                    float remainingTime = attackInterval - attackAnimLength;
-                    if (remainingTime > 0)
-                    {
-                        yield return new WaitForSeconds(remainingTime);
-                    }
                 }
             }
             yield return null;
         }
     }
-
+    
     private void PerformAttack(string attackType)
     {
-        bool isCritical = Random.value < criticalChance;
-        float finalDamage = CalculateDamage(isCritical);
-
         var enemies = FindObjectsOfType<EnemyHealth>();
         foreach (var enemy in enemies)
         {
             if (IsEnemyInRange(enemy.gameObject))
             {
-                enemy.TakeDamage(finalDamage, isCritical);
+                // 크리티컬 판정을 EnemyHealth로 전달
+                enemy.TakeDamage(attackDamage, criticalChance, criticalMultiplier);
             }
         }
     }
@@ -245,16 +256,6 @@ public class PlayerController : MonoBehaviour
         float distance = Vector2.Distance(characterPos, enemyPos);
 
         return distance <= attackRange;
-    }
-
-    private float CalculateDamage(bool isCritical)
-    {
-        float damage = attackDamage;
-        if (isCritical)
-        {
-            damage *= criticalMultiplier;
-        }
-        return damage;
     }
 
     private void OnDrawGizmos()

@@ -13,8 +13,6 @@ public class EnemyHealth : MonoBehaviour
     private float maxHealth = 100f;
 
     [Header("Hit Effects")]
-    [SerializeField] private Color normalHitColor = Color.white;
-    [SerializeField] private Color criticalHitColor = Color.red;
     [SerializeField] private float criticalHitPushForce = 0.2f;
 
     private float currentHealth;
@@ -56,9 +54,12 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float damage, bool isCritical = false)
+    public void TakeDamage(float baseDamage, float criticalChance, float criticalMultiplier)
     {
-        currentHealth = Mathf.Max(0, currentHealth - damage);
+        bool isCritical = UnityEngine.Random.value < criticalChance;
+        float finalDamage = CalculateDamage(baseDamage, isCritical, criticalMultiplier);
+        
+        currentHealth = Mathf.Max(0, currentHealth - finalDamage);
         
         if (healthBar != null)
         {
@@ -84,13 +85,22 @@ public class EnemyHealth : MonoBehaviour
         DamagePopupManager popupManager = FindObjectOfType<DamagePopupManager>();
         if (popupManager != null)
         {
-            popupManager.ShowDamage(transform.position, damage, isCritical);
+            popupManager.ShowDamage(transform.position, finalDamage, isCritical);
         }
 
         if (currentHealth <= 0)
         {
             Die();
         }
+    }
+    
+    private float CalculateDamage(float baseDamage, bool isCritical, float criticalMultiplier)
+    {
+        if (isCritical)
+        {
+            return baseDamage * criticalMultiplier;
+        }
+        return baseDamage;
     }
 
     private System.Collections.IEnumerator PushBack()

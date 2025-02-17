@@ -18,16 +18,25 @@ public class EnemyMoveController : MonoBehaviour
     private float attackTimer;
     private bool canAttack = true;
     private Vector2 initialPosition;
+    
+    private EnemyHealth enemyHealth;
+    private bool isDestroyed = false;
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
         image = GetComponent<Image>();
         myRectTransform = GetComponent<RectTransform>();
+        enemyHealth = GetComponent<EnemyHealth>();
     }
 
     private void Start()
     {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnEnemyDeath += HandleDeath;
+        }
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -36,51 +45,75 @@ public class EnemyMoveController : MonoBehaviour
 
         initialPosition = myRectTransform.anchoredPosition;
 
-        // 배경 스크롤 중인지 확인
         if (BackgroundScroller.Instance != null)
         {
             if (BackgroundScroller.Instance.IsScrolling)
             {
-                // 스크롤 중이면 이벤트 구독
                 BackgroundScroller.Instance.OnScrollUpdate += SyncWithBackground;
                 BackgroundScroller.Instance.OnScrollComplete += StartMoving;
             }
             else
             {
-                // 스크롤 중이 아니면 바로 이동 시작
                 StartMoving();
             }
         }
         else
         {
-            // BackgroundScroller가 없으면 바로 이동 시작
             StartMoving();
         }
 
-        // WaveMovementController에 등록
         if (WaveMovementController.Instance != null)
         {
             WaveMovementController.Instance.RegisterEnemy(this);
         }
     }
 
-    private void OnDestroy()
+    private void HandleDeath()
     {
+        if (isDestroyed) return; // 중복 처리 방지
+        
+        isDestroyed = true;
+        SetMovementEnabled(false);
+        
+        // 모든 이벤트 구독 해제
         if (BackgroundScroller.Instance != null)
         {
             BackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
             BackgroundScroller.Instance.OnScrollComplete -= StartMoving;
         }
 
-        // WaveMovementController에서 제거
         if (WaveMovementController.Instance != null)
         {
             WaveMovementController.Instance.UnregisterEnemy(this);
         }
+
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnEnemyDeath -= HandleDeath;
+        }
+
+        // 애니메이터 비활성화
+        if (animator != null)
+        {
+            animator.enabled = false;
+        }
+
+        // 이미지 컴포넌트 비활성화
+        if (image != null)
+        {
+            image.enabled = false;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        HandleDeath();
     }
 
     public void SetStats(float damage, float speed, float movement, float range, float gold)
     {
+        if (isDestroyed) return;
+        
         attackDamage = damage;
         attackInterval = 1f / speed;
         moveSpeed = movement * 100f;
@@ -88,23 +121,25 @@ public class EnemyMoveController : MonoBehaviour
         enemyDropGold = gold;
     }
 
-    // 배경 스크롤과 함께 이동
     private void SyncWithBackground(float scrollProgress)
     {
+        if (isDestroyed) return;
+        
         float totalScroll = BackgroundScroller.Instance.GetScrollAmount();
         Vector2 newPos = initialPosition;
         newPos.x -= totalScroll * scrollProgress;
         myRectTransform.anchoredPosition = newPos;
 
-        if (animator != null)
+        if (animator != null && !isDestroyed)
         {
             animator.SetBool("IsWalking", true);
         }
     }
 
-    // 스크롤이 끝나면 자체 이동 시작
     public void StartMoving()
     {
+        if (isDestroyed) return;
+        
         if (BackgroundScroller.Instance != null)
         {
             BackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
@@ -112,7 +147,7 @@ public class EnemyMoveController : MonoBehaviour
         }
         canMove = true;
         
-        if (animator != null)
+        if (animator != null && !isDestroyed)
         {
             animator.SetBool("IsWalking", true);
         }
@@ -120,13 +155,13 @@ public class EnemyMoveController : MonoBehaviour
 
     private void Update()
     {
-        if (playerRectTransform == null || myRectTransform == null) return;
+        if (isDestroyed || this == null || playerRectTransform == null || myRectTransform == null) 
+            return;
+
         if (!canMove) return;
 
-        // 플레이어와의 거리 계산
         bool inRange = IsInAttackRange();
 
-        // 공격 범위 체크
         if (inRange)
         {
             if (animator != null)
@@ -146,7 +181,6 @@ public class EnemyMoveController : MonoBehaviour
                 animator.SetBool("IsWalking", true);
             }
 
-            // 이동 처리
             Vector2 currentPos = myRectTransform.anchoredPosition;
             float moveDistance = moveSpeed * Time.deltaTime;
             Vector2 movement = Vector2.left * moveDistance;
@@ -154,7 +188,6 @@ public class EnemyMoveController : MonoBehaviour
             myRectTransform.anchoredPosition = newPosition;
         }
 
-        // 공격 쿨다운
         if (!canAttack)
         {
             attackTimer += Time.deltaTime;
@@ -168,6 +201,8 @@ public class EnemyMoveController : MonoBehaviour
 
     private void Attack()
     {
+        if (isDestroyed) return;
+
         if (animator != null)
         {
             animator.SetTrigger("Attack");
@@ -185,6 +220,8 @@ public class EnemyMoveController : MonoBehaviour
     
     public void SetMovementEnabled(bool enabled)
     {
+        if (isDestroyed) return;
+        
         canMove = enabled;
         if (animator != null)
         {
@@ -194,7 +231,7 @@ public class EnemyMoveController : MonoBehaviour
     
     private bool IsInAttackRange()
     {
-        if (playerRectTransform == null) return false;
+        if (isDestroyed || playerRectTransform == null) return false;
     
         Vector2 enemyPos = myRectTransform.position;
         Vector2 playerPos = playerRectTransform.position;
