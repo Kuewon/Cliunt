@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
+using UnityEngine.UI;
 
 public class UserDataManager : MonoBehaviour
 {
-    public static event Action<bool> OnUserDataProcessed; // 유저 데이터 처리 완료 이벤트
+    public static event Action<bool> OnUserDataProcessed;
 
-    private static string GetUserDataPath()
-    {
-        return Path.Combine(Application.persistentDataPath, "UserData.json");
-    }
+    [Header("UI Elements")]
+    [SerializeField] private GameObject loadingUI;
+    [SerializeField] private GameObject lobbyUI;
+    [SerializeField] private Slider progressBar;
+
+    [Header("Settings")]
+    [SerializeField] private bool showDebugLog = true;
 
     [Serializable]
     public class UserData
@@ -20,54 +24,121 @@ public class UserDataManager : MonoBehaviour
         public Dictionary<string, object> data;
     }
 
+    private void Awake()
+    {
+        InitializeGame();
+    }
+
     private void Start()
     {
+        if (loadingUI != null) loadingUI.SetActive(true);
+        if (lobbyUI != null) lobbyUI.SetActive(false);
+
         Debug.Log($"📂 유저 데이터 파일 경로: {GetUserDataPath()}");
         GoogleSheetsManager.OnDataLoadComplete += OnGameDataLoaded;
     }
 
+    private void InitializeGame()
+    {
+        // 기본 성능 설정
+        Application.targetFrameRate = 60;
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
+        // 모바일 환경 최적화
+        if (Application.platform == RuntimePlatform.Android || 
+            Application.platform == RuntimePlatform.IPhonePlayer)
+        {
+            QualitySettings.SetQualityLevel(1);
+            QualitySettings.vSyncCount = 0;
+            QualitySettings.antiAliasing = 0;
+        }
+
+        // 초기 메모리 정리
+        Resources.UnloadUnusedAssets();
+        System.GC.Collect();
+    }
+
+    private static string GetUserDataPath()
+    {
+        return Path.Combine(Application.persistentDataPath, "UserData.json");
+    }
+
     private void OnGameDataLoaded()
     {
-        Debug.Log("✅ Google 스프레드시트 데이터 로드 완료! 유저 데이터 검증을 시작합니다.");
+        if (showDebugLog)
+            Debug.Log("✅ 스프레드시트 데이터 로드 완료! 유저 데이터 검증을 시작합니다.");
 
         bool isNewUser = ProcessUserData();
         OnUserDataProcessed?.Invoke(isNewUser);
+
+        if (loadingUI != null) loadingUI.SetActive(false);
+        if (lobbyUI != null) lobbyUI.SetActive(true);
     }
 
     public static UserData GetCurrentUserData()
     {
-        string jsonData = File.ReadAllText(GetUserDataPath());
-        return JsonConvert.DeserializeObject<UserData>(jsonData);
+        try
+        {
+            string filePath = GetUserDataPath();
+            if (!File.Exists(filePath))
+            {
+                Debug.LogWarning("⚠️ 유저 데이터 파일이 존재하지 않습니다.");
+                return null;
+            }
+
+            string jsonData = File.ReadAllText(filePath);
+            return JsonConvert.DeserializeObject<UserData>(jsonData);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ 유저 데이터 로드 실패: {e.Message}");
+            return null;
+        }
     }
 
     public static void SaveUserData(UserData userData)
     {
-        var settings = new JsonSerializerSettings
+        try
         {
-            Formatting = Formatting.Indented,
-            TypeNameHandling = TypeNameHandling.None  // 타입 정보를 제외하고 저장
-        };
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                TypeNameHandling = TypeNameHandling.None
+            };
 
-        string jsonData = JsonConvert.SerializeObject(userData, settings);
-        File.WriteAllText(GetUserDataPath(), jsonData);
+            string jsonData = JsonConvert.SerializeObject(userData, settings);
+            File.WriteAllText(GetUserDataPath(), jsonData);
+            
+            Debug.Log("✅ 유저 데이터 저장 완료");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ 유저 데이터 저장 실패: {e.Message}");
+        }
     }
 
     private bool ProcessUserData()
     {
         bool isNewUser = !File.Exists(GetUserDataPath());
 
-        if (isNewUser)
+        try
         {
-            Debug.Log("🚀 유저 데이터가 존재하지 않습니다. `UserLocalBaseSetting`을 기반으로 새 유저 생성.");
-            CreateUserDataFromLocalSettings();
+            if (isNewUser)
+            {
+                Debug.Log("🚀 신규 유저 데이터 생성을 시작합니다.");
+                CreateUserDataFromLocalSettings();
+            }
+            else
+            {
+                Debug.Log("✅ 기존 유저 데이터 검증을 시작합니다.");
+                UpdateUserDataWithNewFields();
+            }
         }
-        else
+        catch (Exception e)
         {
-            Debug.Log("✅ 유저 데이터가 존재합니다. 데이터 검증을 진행합니다.");
-            UpdateUserDataWithNewFields();
+            Debug.LogError($"❌ 유저 데이터 처리 중 오류 발생: {e.Message}");
         }
 
-        OnUserDataProcessed?.Invoke(isNewUser);
         return isNewUser;
     }
 
@@ -78,13 +149,8 @@ public class UserDataManager : MonoBehaviour
         if (localSettings == null || localSettings.Count == 0)
         {
             Debug.LogError("❌ `UserLocalBaseSetting` 데이터를 찾을 수 없습니다!");
-            localSettings = new Dictionary<string, object>();
+            return;
         }
-
-        // 필수 기본값들 확인 및 설정
-        if (!localSettings.ContainsKey("playerRevolverIndex")) localSettings["playerRevolverIndex"] = 0;
-        if (!localSettings.ContainsKey("playerCylinderIndex")) localSettings["playerCylinderIndex"] = 0;
-        if (!localSettings.ContainsKey("playerBulletIndex")) localSettings["playerBulletIndex"] = 0;
 
         // 배열 데이터 처리
         string[] gradeTypes = { "Revolver", "Cylinder", "Bullet" };
@@ -104,25 +170,24 @@ public class UserDataManager : MonoBehaviour
             data = localSettings
         };
 
+        string directory = Path.GetDirectoryName(GetUserDataPath());
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
         SaveUserData(newUser);
         Debug.Log($"✅ 새 유저 데이터 생성 완료!\n📂 저장 위치: {GetUserDataPath()}");
     }
 
     private void UpdateUserDataWithNewFields()
     {
-        string filePath = GetUserDataPath();
-        if (!File.Exists(filePath))
-        {
-            Debug.LogError("❌ 유저 데이터 파일이 존재하지 않습니다. 새로 생성해야 합니다.");
-            return;
-        }
-
         UserData existingUser = GetCurrentUserData();
         Dictionary<string, object> localSettings = GameData.Instance.GetRow("UserLocalBaseSetting", 0);
-        
+
         if (localSettings == null || localSettings.Count == 0)
         {
-            Debug.LogError("❌ `UserLocalBaseSetting` 데이터를 찾을 수 없습니다! 기존 데이터 유지.");
+            Debug.LogError("❌ `UserLocalBaseSetting` 데이터를 찾을 수 없습니다!");
             return;
         }
 
@@ -133,14 +198,14 @@ public class UserDataManager : MonoBehaviour
             {
                 existingUser.data[kvp.Key] = kvp.Value;
                 updated = true;
-                Debug.Log($"🔄 새로운 항목 추가됨: {kvp.Key} = {kvp.Value}");
+                Debug.Log($"🔄 새로운 필드 추가: {kvp.Key}");
             }
         }
 
         if (updated)
         {
             SaveUserData(existingUser);
-            Debug.Log("✅ 유저 데이터가 업데이트되었습니다.");
+            Debug.Log("✅ 유저 데이터 업데이트 완료");
         }
     }
 
@@ -148,6 +213,16 @@ public class UserDataManager : MonoBehaviour
     {
         GoogleSheetsManager.OnDataLoadComplete -= OnGameDataLoaded;
     }
-    
-    
+
+    // 게임 씬으로 전환
+    public void StartGame()
+    {
+        if (loadingUI != null) loadingUI.SetActive(true);
+        if (lobbyUI != null) lobbyUI.SetActive(false);
+
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("GameScene").completed += (op) =>
+        {
+            if (loadingUI != null) loadingUI.SetActive(false);
+        };
+    }
 }
