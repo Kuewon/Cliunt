@@ -192,14 +192,14 @@ public class EquipmentUI : MonoBehaviour
 
         string name = GameData.Instance.GetString(sheetName, equippedIndex, "cylinderName", "이름 없음");
         string grade = GetGradeText(GameData.Instance.GetInt(sheetName, equippedIndex, "cylinderGrade", 0));
-        float damage = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderBaseDamage", 0f);
+        float maxSpeed = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderMaxSpeed", 0f);
         string description = GameData.Instance.GetString(sheetName, equippedIndex, "cylinderDescription", "설명 없음");
         int baseLevel = GameData.Instance.GetInt(sheetName, equippedIndex, "cylinderBaseLevel", 1);
         float effect = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderBuffEffect", 0f);
 
         if (cylinderNameText != null) cylinderNameText.text = name;
         if (cylinderGradeText != null) cylinderGradeText.text = $"등급: {grade}";
-        if (cylinderDamageText != null) cylinderDamageText.text = $"기본 공격력: {damage:F1}";
+        if (cylinderDamageText != null) cylinderDamageText.text = $"최대 회전 속도: {maxSpeed:F1}";
         if (cylinderDescriptionText != null) cylinderDescriptionText.text = description;
         if (cylinderLevelText != null) cylinderLevelText.text = $"기본 레벨: {baseLevel}";
         if (cylinderEffectText != null) cylinderEffectText.text = $"버프 효과: {effect:P1}";
