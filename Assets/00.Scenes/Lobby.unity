@@ -363,9 +363,9 @@ RectTransform:
   m_Father: {fileID: 2005838390}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 558, y: 138.65002}
-  m_SizeDelta: {x: 850, y: 590}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &151425596
 MonoBehaviour:
@@ -387,7 +387,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 11ebae65c2e9645219b7e47202e76dc8, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9225668cb2d8e40ed971c0be733800be, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1380,28 +1380,33 @@ MonoBehaviour:
     delay: 0
   pudding1:
     target: {fileID: 1599381993}
-    scaleFactor: 0.1
+    scaleFactor: 0.075
     bounceDuration: 1.125
     delay: 0
   pudding2:
     target: {fileID: 1289293466}
-    scaleFactor: 0.1
+    scaleFactor: 0.075
     bounceDuration: 1.125
     delay: 0
   pudding3:
     target: {fileID: 2121686600}
-    scaleFactor: 0.1
+    scaleFactor: 0.075
     bounceDuration: 1.125
     delay: 0
   pudding4:
     target: {fileID: 1664341974}
-    scaleFactor: 0.1
+    scaleFactor: 0.075
     bounceDuration: 1.125
     delay: 0
   pudding5:
     target: {fileID: 1423654202}
-    scaleFactor: 0.1
+    scaleFactor: 0.075
     bounceDuration: 1.125
+    delay: 0
+  startBTN6:
+    target: {fileID: 349502241}
+    scaleFactor: 0.175
+    bounceDuration: 0.75
     delay: 0
 --- !u!4 &1417707467
 Transform:
@@ -1972,10 +1977,10 @@ RectTransform:
   - {fileID: 151425595}
   m_Father: {fileID: 1184641734}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 517.85}
-  m_SizeDelta: {x: 1080, y: 285}
+  m_AnchorMin: {x: 0, y: 0.6016042}
+  m_AnchorMax: {x: 1, y: 0.8468126}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2093363724
 GameObject:

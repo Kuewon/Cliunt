@@ -1359,11 +1359,11 @@ Material:
   m_Shader: {fileID: 4800000, guid: a36b7719ff0465b42ab1407d67672c5f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords:
+  m_ValidKeywords:
   - CHANGECOLOR_ON
   - COLORRAMPOUTLINE_ON
   - GLOWTEX_ON
+  m_InvalidKeywords:
   - _COLORRAMPOUTLINE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -2346,6 +2346,7 @@ GameObject:
   - component: {fileID: 1207112362}
   - component: {fileID: 1207112361}
   - component: {fileID: 1207112365}
+  - component: {fileID: 1207112366}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -2476,6 +2477,58 @@ MonoBehaviour:
   bulletDescriptionText: {fileID: 0}
   bulletLevelText: {fileID: 0}
   bulletEffectText: {fileID: 0}
+--- !u!114 &1207112366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1207112360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b86f0701342b4b21aef3de328856b5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bottomButtons:
+  - {fileID: 264856392782478712}
+  - {fileID: 4567463592045429984}
+  - {fileID: 7255048528333338108}
+  - {fileID: 6103442994426936124}
+  closeButtonSprite: {fileID: 21300000, guid: e29fec72b62b14584a301c7682449b64, type: 3}
+  upgradePanel: {fileID: 8664383452447093161}
+  upgradePanelSpeed: 0.3
+  upgradePanelStartOffset: -300
+  weaponBottomImage: {fileID: 7868673283450801577}
+  weaponTopImage: {fileID: 301973292768351429}
+  loadingSpinner: {fileID: 6775476334282379198}
+  weaponUpgradePanel: {fileID: 8986019321232874717}
+  weaponAnimationSpeed: 0.05
+  bottomImageStartOffset: -300
+  topImageStartOffset: 300
+  weaponCollisionOffset: 0
+  weaponBounceStrength: 50
+  weaponBounceDuration: 0.07
+  spinnerInitialScale: 10
+  spinnerScaleTime: 0.125
+  spinnerDelay: 0.1
+  revolverSpinnerImage: {fileID: 8804550107182417829}
+  cylinderSpinnerImage: {fileID: 4893802217289129640}
+  tabButtons:
+  - {fileID: 5318346556046403946}
+  - {fileID: 886571425341082828}
+  - {fileID: 3667565536356950103}
+  revolverTabImage: {fileID: 301973292768351429}
+  cylinderTabImage: {fileID: 4758593801619157803}
+  bulletTabImage: {fileID: 3685919771262829646}
+  tabAnimationDuration: 0.125
+  tabSlideDistance: 1080
+  tabInfoBoxParents:
+  - {fileID: 8107964928402420027}
+  - {fileID: 355406488}
+  - {fileID: 309148815}
+  infoBoxRotateAmount: 20
+  infoBoxRotateDuration: 0.25
+  infoBoxReturnDelay: 0.1
 --- !u!1 &1268462826
 GameObject:
   m_ObjectHideFlags: 0
@@ -14566,6 +14619,10 @@ PrefabInstance:
       propertyPath: criticalMultiplierText
       value: 
       objectReference: {fileID: 1710503499201690748}
+    - target: {fileID: 1837908705610422277, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4052909996315219633, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -14812,7 +14869,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a1125cd271212c644a60514218f35d32, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 3bde308100a5a3a47b5607be9e286e52, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -15589,10 +15646,10 @@ RectTransform:
   - {fileID: 4929508841019333953}
   m_Father: {fileID: 2025898756410034267}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.107359305, y: 0.26584134}
-  m_AnchorMax: {x: 0.901, y: 0.818}
-  m_AnchoredPosition: {x: 0, y: -504.19122}
-  m_SizeDelta: {x: 0, y: -513.71643}
+  m_AnchorMin: {x: 0.14259258, y: 0.16237566}
+  m_AnchorMax: {x: 0.85, y: 0.44622928}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4491019083369881506
 GameObject:
@@ -15841,7 +15898,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -584325435, guid: 363c68a619a883e4bbb7da08c2c5078a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 456ab53efb45343f88dddf3fc5fca77e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -15926,7 +15983,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7686179121773915668}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b86f0701342b4b21aef3de328856b5a, type: 3}
   m_Name: 
@@ -16029,7 +16086,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!222 &4767369957279339657
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -16167,7 +16224,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!1 &4909388209519039396
 GameObject:
   m_ObjectHideFlags: 0
@@ -16200,8 +16257,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 4456411775122463370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.22440743, y: 0.14864519}
-  m_AnchorMax: {x: 0.776, y: 0.8451613}
+  m_AnchorMin: {x: 0.15200001, y: 0}
+  m_AnchorMax: {x: 0.87274873, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -22001,7 +22058,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a1125cd271212c644a60514218f35d32, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 3bde308100a5a3a47b5607be9e286e52, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

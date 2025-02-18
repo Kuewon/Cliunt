@@ -42,7 +42,7 @@ public class LobbyUIManager : MonoBehaviour
     [SerializeField] private PuddingObject pudding3;
     [SerializeField] private PuddingObject pudding4;
     [SerializeField] private PuddingObject pudding5;
-
+    [SerializeField] private PuddingObject startBTN6;
 
 
     private void Start()
@@ -57,6 +57,7 @@ public class LobbyUIManager : MonoBehaviour
         AnimatePudding(pudding3);
         AnimatePudding(pudding4);
         AnimatePudding(pudding5);
+        AnimatePudding(startBTN6);
         
         // 버튼이 Inspector에서 설정되지 않았다면 오류 로그 출력 후 종료
         if (newGameButton == null || continueButton == null)
