@@ -16,7 +16,7 @@ public class SpinnerController : MonoBehaviour
     private float clickCooldown = 0.2f; // 🔹 최소 클릭 간격 (0.2초)
 
     [Header("⚡ 회전 속도 설정")]
-    [SerializeField] private float maxSpeed = 2000f;
+    [SerializeField] public float maxSpeed = 2000f;
     [SerializeField] private float accelerationMultiplier = 2.0f;
 
     [Header("🎯 힘 조절 설정")]
@@ -132,7 +132,6 @@ public class SpinnerController : MonoBehaviour
         {
             float appliedDamping = isDragging ? dampingRate : 0.985f;
             currentSpinSpeed *= appliedDamping;
-
             currentSpinSpeed = Mathf.Max(0, currentSpinSpeed - (fixedDeceleration * Time.deltaTime * (isDragging ? 1f : 0.5f)));
         }
         else
@@ -142,8 +141,12 @@ public class SpinnerController : MonoBehaviour
 
         float rotationAmount = -Mathf.Abs(currentSpinSpeed) * Time.deltaTime;
         rectTransform.Rotate(0, 0, rotationAmount);
-
         totalRotation += Mathf.Abs(rotationAmount);
         rotationCount = Mathf.FloorToInt(totalRotation / 360f);
+    }
+
+    public float GetCurrentSpeed()
+    {
+        return currentSpinSpeed;
     }
 }
