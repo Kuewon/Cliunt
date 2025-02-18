@@ -15,7 +15,6 @@ public class EquipmentManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
             InitializeManager();
             
-            // ✅ 이벤트 구독을 Awake()에서 처리
             UserDataManager.OnUserDataProcessed += Initialize;
         }
         else
@@ -30,11 +29,10 @@ public class EquipmentManager : MonoBehaviour
     [SerializeField] private bool showDebugLog = true;
 
     private UserDataManager userDataManager;
+    private SpinnerController spinnerController; // 추가: SpinnerController 참조
     private int equippedRevolverIndex = 0;
     private int equippedCylinderIndex = 0;
     private int equippedBulletIndex = 0;
-
-    
     #endregion
 
     #region Unity Events
@@ -52,6 +50,19 @@ public class EquipmentManager : MonoBehaviour
         {
             Debug.LogWarning("⚠️ UserDataManager를 찾을 수 없습니다!");
         }
+
+        // 추가: SpinnerController 찾기
+        UpdateSpinnerControllerReference();
+    }
+
+    // 추가: SpinnerController 참조 업데이트 메서드
+    private void UpdateSpinnerControllerReference()
+    {
+        spinnerController = FindObjectOfType<SpinnerController>();
+        if (spinnerController == null && showDebugLog)
+        {
+            Debug.LogWarning("⚠️ SpinnerController를 찾을 수 없습니다!");
+        }
     }
 
     private void Initialize(bool isNewUser)
@@ -62,7 +73,10 @@ public class EquipmentManager : MonoBehaviour
         }
         LoadRevolverData();
         LoadCylinderData();
-        LoadBulletData(); // 총알 데이터도 로드
+        LoadBulletData();
+        
+        // 추가: 실린더 데이터 로드 후 스피너 업데이트
+        UpdateSpinnerMaxSpeed();
     }
     #endregion
 
@@ -73,7 +87,6 @@ public class EquipmentManager : MonoBehaviour
         equippedRevolverIndex = index;
         SaveRevolverData();
         
-        // ✅ UI 자동 업데이트
         FindObjectOfType<EquipmentUI>()?.UpdateRevolverUI();
     }
     
@@ -84,6 +97,9 @@ public class EquipmentManager : MonoBehaviour
         SaveCylinderData();
         
         FindObjectOfType<EquipmentUI>()?.UpdateCylinderUI();
+        
+        // 추가: 실린더 장착 시 스피너 업데이트
+        UpdateSpinnerMaxSpeed();
     }
     
     public void EquipBullet(int index)
@@ -93,6 +109,24 @@ public class EquipmentManager : MonoBehaviour
         SaveBulletData();
         
         FindObjectOfType<EquipmentUI>()?.UpdateBulletUI();
+    }
+
+    // 추가: 스피너 MaxSpeed 업데이트 메서드
+    private void UpdateSpinnerMaxSpeed()
+    {
+        if (spinnerController == null)
+        {
+            UpdateSpinnerControllerReference();
+        }
+
+        if (spinnerController != null)
+        {
+            spinnerController.OnCylinderEquipped();
+            if (showDebugLog)
+            {
+                Debug.Log($"🎡 스피너 최대 속도 업데이트 완료 (실린더 인덱스: {equippedCylinderIndex})");
+            }
+        }
     }
     #endregion
 
@@ -104,12 +138,9 @@ public class EquipmentManager : MonoBehaviour
             var userData = UserDataManager.GetCurrentUserData();
             if (userData?.data == null) return;
 
-            equippedRevolverIndex = Convert.ToInt32(userData.data[
-                "playerRevolverIndex"]);
+            equippedRevolverIndex = Convert.ToInt32(userData.data["playerRevolverIndex"]);
             
             LogLoadSuccess();
-
-            // ✅ UI 업데이트 추가
             FindObjectOfType<EquipmentUI>()?.UpdateRevolverUI();
         }
         catch (Exception e)
@@ -220,7 +251,6 @@ public class EquipmentManager : MonoBehaviour
     public int GetEquippedRevolverIndex() => equippedRevolverIndex;
     public int GetEquippedCylinderIndex() => equippedCylinderIndex;
     public int GetEquippedBulletIndex() => equippedBulletIndex; 
-    
     #endregion
 
     #region Debug Helpers

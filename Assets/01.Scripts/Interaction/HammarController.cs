@@ -8,7 +8,8 @@ namespace _01.Scripts.Interaction
         [Header("References")]
         [SerializeField] private RectTransform[] spinnerTriggers;
         [SerializeField] private GaugeBar gaugeBar;
-        [SerializeField] private FireHitEffect fireHitPrefab; // 🔥 Fire Hit 이펙트 프리팹 추가
+        [SerializeField] private FireHitEffect fireHitPrefab; // 🔥 Fire Hit 프리팹
+        [SerializeField] private Transform fireHitPoint; // 🔥 Fire Hit이 나올 위치
 
         private RectTransform _myRect;
         private Camera _uiCamera;
@@ -71,8 +72,8 @@ namespace _01.Scripts.Interaction
                     playerController.TriggerManualAttack();
                 }
 
-                // 🔥 Fire Hit 이펙트 실행
-                TriggerFireHitEffect(spinnerTriggers[triggerIndex].position);
+                // 🔥 Fire Hit 이펙트 실행 (고정된 위치에서)
+                TriggerFireHitEffect();
             }
 
             for (int i = 0; i < spinnerTriggers.Length; i++)
@@ -132,13 +133,13 @@ namespace _01.Scripts.Interaction
             return false;
         }
 
-        // 🔥 Fire Hit 이펙트 실행 함수
-        private void TriggerFireHitEffect(Vector3 position)
+        // 🔥 Fire Hit 이펙트 실행 함수 (고정된 위치에서 실행됨!)
+        private void TriggerFireHitEffect()
         {
-            if (fireHitPrefab != null)
+            if (fireHitPrefab != null && fireHitPoint != null) // 🔹 Fire Hit 프리팹과 위치가 설정되었는지 확인
             {
-                FireHitEffect fireHitInstance = Instantiate(fireHitPrefab, position, Quaternion.identity);
-                fireHitInstance.PlayEffect(position);
+                FireHitEffect fireHitInstance = Instantiate(fireHitPrefab, fireHitPoint.position, Quaternion.identity);
+                fireHitInstance.PlayEffect(fireHitPoint.position);
             }
         }
     }

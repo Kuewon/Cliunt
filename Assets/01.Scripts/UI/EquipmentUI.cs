@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Serialization;
 
 public class EquipmentUI : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class EquipmentUI : MonoBehaviour
     [Header("Selected Cylinder UI")]
     [SerializeField] private TMP_Text cylinderNameText;
     [SerializeField] private TMP_Text cylinderGradeText;
-    [SerializeField] private TMP_Text cylinderDamageText;
+    [FormerlySerializedAs("cylinderDamageText")] [SerializeField] private TMP_Text cylinderMaxSpeedText;
     [SerializeField] private TMP_Text cylinderDescriptionText;
     [SerializeField] private TMP_Text cylinderLevelText;
     [SerializeField] private TMP_Text cylinderEffectText;
@@ -192,14 +193,14 @@ public class EquipmentUI : MonoBehaviour
 
         string name = GameData.Instance.GetString(sheetName, equippedIndex, "cylinderName", "이름 없음");
         string grade = GetGradeText(GameData.Instance.GetInt(sheetName, equippedIndex, "cylinderGrade", 0));
-        float damage = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderBaseDamage", 0f);
+        float maxSpeed = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderMaxSpeed", 0f);
         string description = GameData.Instance.GetString(sheetName, equippedIndex, "cylinderDescription", "설명 없음");
         int baseLevel = GameData.Instance.GetInt(sheetName, equippedIndex, "cylinderBaseLevel", 1);
         float effect = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderBuffEffect", 0f);
 
         if (cylinderNameText != null) cylinderNameText.text = name;
         if (cylinderGradeText != null) cylinderGradeText.text = $"등급: {grade}";
-        if (cylinderDamageText != null) cylinderDamageText.text = $"기본 공격력: {damage:F1}";
+        if (cylinderMaxSpeedText != null) cylinderMaxSpeedText.text = $"최대 회전속도: {maxSpeed:F1}";
         if (cylinderDescriptionText != null) cylinderDescriptionText.text = description;
         if (cylinderLevelText != null) cylinderLevelText.text = $"기본 레벨: {baseLevel}";
         if (cylinderEffectText != null) cylinderEffectText.text = $"버프 효과: {effect:P1}";

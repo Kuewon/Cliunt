@@ -33,7 +33,7 @@ public class SpeedBasedSparks : MonoBehaviour
                 sparksFX.Play(); // 속도가 일정 이상이면 파티클 재생
             }
 
-            float normalizedSpeed = Mathf.InverseLerp(speedThreshold, spinner.maxSpeed, speed);
+            float normalizedSpeed = Mathf.InverseLerp(speedThreshold, 2000F, speed);
             float emissionRate = Mathf.Lerp(minEmission, maxEmission, normalizedSpeed);
             emissionModule.rateOverTime = emissionRate;
         }
