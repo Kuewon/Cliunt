@@ -13,7 +13,6 @@ public class BackgroundScroller : MonoBehaviour
 
     private float backgroundWidth;
     private bool isScrolling = false;
-    private Animator characterAnimator;
     private bool isImage1Active = true;  // 현재 화면에 보이는 배경이 어떤 것인지 추적
 
     public event Action OnScrollComplete;
@@ -32,12 +31,6 @@ public class BackgroundScroller : MonoBehaviour
         else
         {
             Destroy(gameObject);
-        }
-
-        GameObject player = GameObject.FindWithTag("Player");
-        if (player != null)
-        {
-            characterAnimator = player.GetComponent<Animator>();
         }
     }
 
@@ -103,11 +96,6 @@ public class BackgroundScroller : MonoBehaviour
     private IEnumerator ScrollBackgrounds()
     {
         isScrolling = true;
-    
-        if (characterAnimator != null)
-        {
-            characterAnimator.SetBool("IsWalking", true);
-        }
 
         RectTransform currentBg = isImage1Active ? backgroundImage1 : backgroundImage2;
         RectTransform nextBg = isImage1Active ? backgroundImage2 : backgroundImage1;
@@ -140,11 +128,6 @@ public class BackgroundScroller : MonoBehaviour
 
         // 활성 배경 전환
         isImage1Active = !isImage1Active;
-    
-        if (characterAnimator != null)
-        {
-            characterAnimator.SetBool("IsWalking", false);
-        }
 
         isScrolling = false;
         OnScrollComplete?.Invoke();
