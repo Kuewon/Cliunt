@@ -7,8 +7,8 @@ namespace _01.Scripts.Interaction
     {
         [Header("References")]
         [SerializeField] private RectTransform[] spinnerTriggers;
-        [SerializeField] private GaugeBar gaugeBar;  // ✅ GaugeBar 참조 추가
-        
+        [SerializeField] private GaugeBar gaugeBar;
+
         private RectTransform _myRect;
         private Camera _uiCamera;
         private Dictionary<int, Vector3> _previousPositions = new Dictionary<int, Vector3>();
@@ -22,9 +22,8 @@ namespace _01.Scripts.Interaction
         private const int EXIT_FRAME_THRESHOLD = 30;
         private const int SAMPLE_POINTS = 15;
         private const float SPEED_THRESHOLD = 300f;
-        
-        private bool _isFirstFrame = true;
 
+        private bool _isFirstFrame = true;
         private PlayerController playerController;
 
         private void Awake()
@@ -60,9 +59,8 @@ namespace _01.Scripts.Interaction
             if (_hitQueue.Count > 0 && Time.frameCount - _lastHitFrame >= MIN_FRAME_GAP)
             {
                 int triggerIndex = _hitQueue.Dequeue();
-                // Debug.Log($"✅ Hit {triggerIndex + 1} at Frame {Time.frameCount}");
                 _lastHitFrame = Time.frameCount;
-                
+
                 // ✅ Hit 발생 시 GaugeBar에 알림
                 gaugeBar?.IncreaseGauge();
 
