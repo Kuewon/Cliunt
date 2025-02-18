@@ -232,20 +232,35 @@ public class PlayerController : MonoBehaviour
             yield return null;
         }
     }
-    
+
     private void PerformAttack(string attackType)
     {
         var enemies = FindObjectsOfType<EnemyHealth>();
+
+        // 사거리 내의 적들을 거리순으로 정렬하여 가장 가까운 적만 공격
+        EnemyHealth nearestEnemy = null;
+        float nearestDistance = float.MaxValue;
+
         foreach (var enemy in enemies)
         {
-            if (IsEnemyInRange(enemy.gameObject))
+            if (enemy != null && IsEnemyInRange(enemy.gameObject))
             {
-                // 크리티컬 판정을 EnemyHealth로 전달
-                enemy.TakeDamage(attackDamage, criticalChance, criticalMultiplier);
+                float distance = Vector2.Distance(rectTransform.position, enemy.transform.position);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestEnemy = enemy;
+                }
             }
         }
+
+        // 가장 가까운 적이 있다면 공격
+        if (nearestEnemy != null)
+        {
+            nearestEnemy.TakeDamage(attackDamage, criticalChance, criticalMultiplier);
+        }
     }
-    
+
     private bool IsEnemyInRange(GameObject enemy)
     {
         RectTransform enemyRect = enemy.GetComponent<RectTransform>();
