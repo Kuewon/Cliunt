@@ -11,6 +11,10 @@ namespace _01.Scripts.Interaction
         [SerializeField] private FireHitEffect fireHitPrefab; // 🔥 Fire Hit 프리팹
         [SerializeField] private Transform fireHitPoint; // 🔥 Fire Hit이 나올 위치
 
+        [Header("🔔 진동 설정")] // ✅ 진동 관련 변수 추가
+        [SerializeField] private long vibrationDuration = 30; // 🕒 50ms (아주 짧은 진동)
+        [SerializeField] private int vibrationStrength = 30;  // 💥 50 (약한 진동)
+
         private RectTransform _myRect;
         private Camera _uiCamera;
         private Dictionary<int, Vector3> _previousPositions = new Dictionary<int, Vector3>();
@@ -74,6 +78,9 @@ namespace _01.Scripts.Interaction
 
                 // 🔥 Fire Hit 이펙트 실행 (고정된 위치에서)
                 TriggerFireHitEffect();
+
+                // 📌 ✅ Hit 발생 시 진동 실행
+                TriggerVibration();
             }
 
             for (int i = 0; i < spinnerTriggers.Length; i++)
@@ -136,10 +143,32 @@ namespace _01.Scripts.Interaction
         // 🔥 Fire Hit 이펙트 실행 함수 (고정된 위치에서 실행됨!)
         private void TriggerFireHitEffect()
         {
-            if (fireHitPrefab != null && fireHitPoint != null) // 🔹 Fire Hit 프리팹과 위치가 설정되었는지 확인
+            if (fireHitPrefab != null && fireHitPoint != null) 
             {
                 FireHitEffect fireHitInstance = Instantiate(fireHitPrefab, fireHitPoint.position, Quaternion.identity);
                 fireHitInstance.PlayEffect(fireHitPoint.position);
+            }
+        }
+
+        // 📌 ✅ 진동 실행 함수 (아주 짧고 약한 진동)
+        private void TriggerVibration()
+        {
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                AndroidJavaObject vibrator = currentActivity.Call<AndroidJavaObject>("getSystemService", "vibrator");
+
+                if (vibrator != null)
+                {
+                    AndroidJavaClass vibrationEffect = new AndroidJavaClass("android.os.VibrationEffect");
+                    AndroidJavaObject effect = vibrationEffect.CallStatic<AndroidJavaObject>("createOneShot", vibrationDuration, vibrationStrength);
+                    vibrator.Call("vibrate", effect);
+                }
+            }
+            else
+            {
+                Handheld.Vibrate(); // 기본 진동 실행 (PC에서는 동작 X)
             }
         }
     }
