@@ -147,7 +147,7 @@ public class GoogleSheetsManager : MonoBehaviour
            sheetNames.Add(sheetName);
        }
 
-       Debug.Log($"✅ Google 스프레드시트 데이터 로드 완료! 총 {sheetNames.Count}개의 시트를 불러왔습니다.");
+       //Debug.Log($"✅ Google 스프레드시트 데이터 로드 완료! 총 {sheetNames.Count}개의 시트를 불러왔습니다.");
        foreach (var name in sheetNames)
        {
            Debug.Log($"📄 {name}");

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -30,6 +31,12 @@ public class AudioManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+
+    private void Start()
+    {
+        // 인게임 브금 실행
+        FindObjectOfType<BackgroundMusicManager>().PlayInGameBGM();
     }
 
     private void InitializeAudioSources()
