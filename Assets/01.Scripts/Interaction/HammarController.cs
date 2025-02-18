@@ -12,8 +12,8 @@ namespace _01.Scripts.Interaction
         [SerializeField] private Transform fireHitPoint; // 🔥 Fire Hit이 나올 위치
 
         [Header("🔔 진동 설정")] // ✅ 진동 관련 변수 추가
-        [SerializeField] private long vibrationDuration = 30; // 🕒 50ms (아주 짧은 진동)
-        [SerializeField] private int vibrationStrength = 30;  // 💥 50 (약한 진동)
+        [SerializeField] private long vibrationDuration = 30;
+        [SerializeField] private int vibrationStrength = 30;
 
         private RectTransform _myRect;
         private Camera _uiCamera;
