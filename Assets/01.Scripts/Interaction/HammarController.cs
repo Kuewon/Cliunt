@@ -7,8 +7,10 @@ namespace _01.Scripts.Interaction
     {
         [Header("References")]
         [SerializeField] private RectTransform[] spinnerTriggers;
-        [SerializeField] private GaugeBar gaugeBar;  // ✅ GaugeBar 참조 추가
-        
+        [SerializeField] private GaugeBar gaugeBar;
+        [SerializeField] private FireHitEffect fireHitPrefab; // 🔥 Fire Hit 프리팹
+        [SerializeField] private Transform fireHitPoint; // 🔥 Fire Hit이 나올 위치
+
         private RectTransform _myRect;
         private Camera _uiCamera;
         private Dictionary<int, Vector3> _previousPositions = new Dictionary<int, Vector3>();
@@ -22,9 +24,8 @@ namespace _01.Scripts.Interaction
         private const int EXIT_FRAME_THRESHOLD = 30;
         private const int SAMPLE_POINTS = 15;
         private const float SPEED_THRESHOLD = 300f;
-        
-        private bool _isFirstFrame = true;
 
+        private bool _isFirstFrame = true;
         private PlayerController playerController;
 
         private void Awake()
@@ -60,9 +61,8 @@ namespace _01.Scripts.Interaction
             if (_hitQueue.Count > 0 && Time.frameCount - _lastHitFrame >= MIN_FRAME_GAP)
             {
                 int triggerIndex = _hitQueue.Dequeue();
-                // Debug.Log($"✅ Hit {triggerIndex + 1} at Frame {Time.frameCount}");
                 _lastHitFrame = Time.frameCount;
-                
+
                 // ✅ Hit 발생 시 GaugeBar에 알림
                 gaugeBar?.IncreaseGauge();
 
@@ -71,6 +71,9 @@ namespace _01.Scripts.Interaction
                 {
                     playerController.TriggerManualAttack();
                 }
+
+                // 🔥 Fire Hit 이펙트 실행 (고정된 위치에서)
+                TriggerFireHitEffect();
             }
 
             for (int i = 0; i < spinnerTriggers.Length; i++)
@@ -128,6 +131,16 @@ namespace _01.Scripts.Interaction
                 }
             }
             return false;
+        }
+
+        // 🔥 Fire Hit 이펙트 실행 함수 (고정된 위치에서 실행됨!)
+        private void TriggerFireHitEffect()
+        {
+            if (fireHitPrefab != null && fireHitPoint != null) // 🔹 Fire Hit 프리팹과 위치가 설정되었는지 확인
+            {
+                FireHitEffect fireHitInstance = Instantiate(fireHitPrefab, fireHitPoint.position, Quaternion.identity);
+                fireHitInstance.PlayEffect(fireHitPoint.position);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using TMPro; // 🔹 TextMeshPro 사용
+using TMPro;
 
 public class SpinnerController : MonoBehaviour
 {
@@ -12,11 +12,11 @@ public class SpinnerController : MonoBehaviour
     private float totalRotation = 0f;
     private int rotationCount = 0;
 
-    private float lastClickTime = 0f; // 🔹 마지막 클릭 시간 저장
-    private float clickCooldown = 0.2f; // 🔹 최소 클릭 간격 (0.2초)
+    private float lastClickTime = 0f;
+    private float clickCooldown = 0.2f;
 
     [Header("⚡ 회전 속도 설정")]
-    [SerializeField] public float maxSpeed = 2000f;
+    private float maxSpeed = 2000f; // SerializeField 제거하고 private로 변경
     [SerializeField] private float accelerationMultiplier = 2.0f;
 
     [Header("🎯 힘 조절 설정")]
@@ -37,7 +37,7 @@ public class SpinnerController : MonoBehaviour
 
     [Header("⏳ 조작 시간 설정")]
     [SerializeField] private float shortDragThreshold = 0.2f;
-    [SerializeField] private float shortDragBoost = 1.05f; // 🔹 Boost 값 낮춤
+    [SerializeField] private float shortDragBoost = 1.05f;
 
     [Header("📊 UI 속도 및 회전 수 표시")]
     public TextMeshProUGUI speedText;
@@ -48,10 +48,37 @@ public class SpinnerController : MonoBehaviour
         rectTransform = GetComponent<RectTransform>();
     }
 
+    private void Start()
+    {
+        UpdateMaxSpeedFromEquippedCylinder();
+    }
+
     private void Update()
     {
         ApplyRotation();
         UpdateUI();
+    }
+
+    // 실린더의 MaxSpeed 값을 가져와서 업데이트하는 메서드
+    private void UpdateMaxSpeedFromEquippedCylinder()
+    {
+        string sheetName = "Cylinder";
+        int equippedIndex = EquipmentManager.Instance.GetEquippedCylinderIndex();
+
+        if (!GameData.Instance.HasRow(sheetName, equippedIndex))
+        {
+            Debug.LogWarning($"⚠️ `{sheetName}` 시트에 인덱스 {equippedIndex}가 존재하지 않습니다.");
+            return;
+        }
+
+        maxSpeed = GameData.Instance.GetFloat(sheetName, equippedIndex, "cylinderMaxSpeed", 250f);
+        Debug.Log($"🔄 실린더의 최대 회전 속도가 {maxSpeed}으로 업데이트되었습니다.");
+    }
+
+    // EquipmentManager에서 실린더 장착 시 호출할 수 있는 public 메서드
+    public void OnCylinderEquipped()
+    {
+        UpdateMaxSpeedFromEquippedCylinder();
     }
 
     private void UpdateUI()
@@ -65,7 +92,7 @@ public class SpinnerController : MonoBehaviour
 
     public void CheckInputClick(Vector2 inputPosition)
     {
-        if (Time.time - lastClickTime < clickCooldown) return; // 🔹 너무 빠른 클릭 무시
+        if (Time.time - lastClickTime < clickCooldown) return;
 
         lastClickTime = Time.time;
         isDragging = true;
@@ -81,7 +108,7 @@ public class SpinnerController : MonoBehaviour
 
         float widthRatio = Screen.width / baseScreenWidth;
         float heightRatio = Screen.height / baseScreenHeight;
-        float scaleFactor = Mathf.Lerp(0.5f, 1f, widthRatio); // 🔹 모바일 감도 조절
+        float scaleFactor = Mathf.Lerp(0.5f, 1f, widthRatio);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, currentPosition, null, out Vector2 localPos);
         Vector2 newMousePosition = localPos / 1000f;
@@ -117,8 +144,8 @@ public class SpinnerController : MonoBehaviour
 
         if (dragDuration < shortDragThreshold)
         {
-            currentSpinSpeed = Mathf.Min(currentSpinSpeed * shortDragBoost, maxSpeed * 0.7f); // 🔹 급격한 가속 방지
-            previousForce *= 0.9f; // 🔹 속도 누적 제한
+            currentSpinSpeed = Mathf.Min(currentSpinSpeed * shortDragBoost, maxSpeed * 0.7f);
+            previousForce *= 0.9f;
         }
         else
         {
