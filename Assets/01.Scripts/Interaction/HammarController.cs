@@ -8,6 +8,7 @@ namespace _01.Scripts.Interaction
         [Header("References")]
         [SerializeField] private RectTransform[] spinnerTriggers;
         [SerializeField] private GaugeBar gaugeBar;
+        [SerializeField] private FireHitEffect fireHitPrefab; // 🔥 Fire Hit 이펙트 프리팹 추가
 
         private RectTransform _myRect;
         private Camera _uiCamera;
@@ -69,6 +70,9 @@ namespace _01.Scripts.Interaction
                 {
                     playerController.TriggerManualAttack();
                 }
+
+                // 🔥 Fire Hit 이펙트 실행
+                TriggerFireHitEffect(spinnerTriggers[triggerIndex].position);
             }
 
             for (int i = 0; i < spinnerTriggers.Length; i++)
@@ -126,6 +130,16 @@ namespace _01.Scripts.Interaction
                 }
             }
             return false;
+        }
+
+        // 🔥 Fire Hit 이펙트 실행 함수
+        private void TriggerFireHitEffect(Vector3 position)
+        {
+            if (fireHitPrefab != null)
+            {
+                FireHitEffect fireHitInstance = Instantiate(fireHitPrefab, position, Quaternion.identity);
+                fireHitInstance.PlayEffect(position);
+            }
         }
     }
 }
