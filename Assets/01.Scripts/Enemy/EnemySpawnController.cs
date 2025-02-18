@@ -96,22 +96,28 @@ public class EnemySpawnController : MonoBehaviour
         }
 
         float width = topIngameRect.rect.width;
-        float spawnX;
-        
+        float baseSpawnX;
+
         if (isStageTransitioning)
         {
             // 스테이지 전환 중일 때는 현재 width의 80% 지점에서 스폰
-            spawnX = width * 0.8f;
+            baseSpawnX = width * 0.8f;
         }
         else
         {
             // 첫 스테이지나 일반 웨이브에서는 현재 스테이지 끝 + 80% 지점에서 스폰
-            spawnX = width + (width * 0.8f);
+            baseSpawnX = width + (width * 0.8f);
         }
-    
+
+        // x축 랜덤 오프셋 추가 (기본 위치에서 ±100 범위)
+        float randomXOffset = UnityEngine.Random.Range(-100f, 100f);
+
         // 화면 중앙 기준으로 보정
-        spawnX = spawnX - (width / 2);
-        float spawnY = playerRect.anchoredPosition.y;
+        float spawnX = (baseSpawnX + randomXOffset) - (width / 2);
+
+        // y축 랜덤 오프셋은 유지
+        float randomYOffset = UnityEngine.Random.Range(-50f, 50f);
+        float spawnY = playerRect.anchoredPosition.y + randomYOffset;
 
         return new Vector2(spawnX, spawnY);
     }
