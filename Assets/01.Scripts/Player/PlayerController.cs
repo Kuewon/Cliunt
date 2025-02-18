@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Base Stats")]
     private float baseAttackDamage = 10f;
-    private float baseAttackSpeed = 0.2f; // 초당 공격 횟수
+    private float baseAttackSpeed = 0.2f;
     private float baseAttackRange = 3f;
     private float baseCriticalChance = 0.1f;
     private float baseCriticalMultiplier = 1.5f;
@@ -28,8 +28,10 @@ public class PlayerController : MonoBehaviour
 
     private bool isInitialized = false;
     private bool isManualAttackPlaying = false;
+    private bool isTransitioning = false;
     private RectTransform rectTransform;
     private Coroutine autoAttackCoroutine;
+    private Coroutine transitionCoroutine;
 
     private const string MANUALATTACK_TRIGGER = "ManualAttack";
     private const string RUNAUTOATTACK_TRIGGER = "RunAutoAttack";
@@ -45,7 +47,7 @@ public class PlayerController : MonoBehaviour
                 gunAnimator = gunTransform.GetComponent<Animator>();
             }
         }
-        
+
         if (bodyAnimator == null)
         {
             Transform bodyTransform = transform.Find("Body");
@@ -54,7 +56,7 @@ public class PlayerController : MonoBehaviour
                 bodyAnimator = bodyTransform.GetComponent<Animator>();
             }
         }
-        
+
         if (frontHandAnimator == null)
         {
             Transform frontHandTransform = transform.Find("FrontHand");
@@ -63,7 +65,7 @@ public class PlayerController : MonoBehaviour
                 frontHandAnimator = frontHandTransform.GetComponent<Animator>();
             }
         }
-        
+
         if (effectAnimator == null)
         {
             Transform effectTransform = transform.Find("GunEffect");
@@ -72,7 +74,7 @@ public class PlayerController : MonoBehaviour
                 effectAnimator = effectTransform.GetComponent<Animator>();
             }
         }
-        
+
         rectTransform = GetComponent<RectTransform>();
     }
 
@@ -91,30 +93,22 @@ public class PlayerController : MonoBehaviour
             Debug.Log("⚠️ 구글 시트 데이터 로드 대기 중... 기본 스탯 사용");
         }
 
+        if (BackgroundScroller.Instance != null)
+        {
+            BackgroundScroller.Instance.OnScrollUpdate += OnScrollStateChanged;
+        }
+
         StartAutoAttack();
-    }
-
-    private void StartAutoAttack()
-    {
-        if (autoAttackCoroutine != null)
-        {
-            StopCoroutine(autoAttackCoroutine);
-        }
-        autoAttackCoroutine = StartCoroutine(AutoAttackRoutine());
-    }
-
-    private void StopAutoAttack()
-    {
-        if (autoAttackCoroutine != null)
-        {
-            StopCoroutine(autoAttackCoroutine);
-            autoAttackCoroutine = null;
-        }
     }
 
     private void OnDestroy()
     {
         GoogleSheetsManager.OnDataLoadComplete -= InitializeStats;
+
+        if (BackgroundScroller.Instance != null)
+        {
+            BackgroundScroller.Instance.OnScrollUpdate -= OnScrollStateChanged;
+        }
     }
 
     private void InitializeWithBaseStats()
@@ -134,7 +128,6 @@ public class PlayerController : MonoBehaviour
         var statsData = GameData.Instance.GetRow("PlayerStats", 0);
         if (statsData == null) return;
 
-        // 데이터 파싱 및 적용
         if (TryParseValue(statsData, "baseAttackDamage", out float damage))
             attackDamage = damage;
 
@@ -155,7 +148,6 @@ public class PlayerController : MonoBehaviour
 
     private bool TryParseValue(Dictionary<string, object> data, string key, out float result)
     {
-        // 기존 코드 유지
         result = 0f;
         if (!data.ContainsKey(key)) return false;
 
@@ -165,71 +157,59 @@ public class PlayerController : MonoBehaviour
         return float.TryParse(value, out result);
     }
 
-    public void TriggerManualAttack()
+    private void OnScrollStateChanged(float progress)
     {
-        // 데미지는 즉시 적용
-        if (BackgroundScroller.Instance.IsScrolling)
+        if (progress > 0 && progress <= 1)
         {
-            PerformAttack("달리기 수동");
-        }
-        else
-        {
-            PerformAttack("수동");
-        }
-
-        // 애니메이션이 재생 중이 아닐 때만 새로운 애니메이션 시작
-        if (!isManualAttackPlaying)
-        {
-            // 현재 자동 공격 중지
-            StopAutoAttack();
-
-            // 달리기 여부에 따라 다른 수동 공격 애니메이션 실행
-            if (BackgroundScroller.Instance.IsScrolling)
+            if (!isTransitioning)
             {
-                StartCoroutine(RunManualAttackRoutine());
-            }
-            else
-            {
-                StartCoroutine(ManualAttackRoutine());
+                StartTransition(BackgroundScroller.Instance.IsScrolling);
             }
         }
     }
 
-    private IEnumerator ManualAttackRoutine()
+    private void StartTransition(bool toRunning)
     {
-        isManualAttackPlaying = true;
-
-        // 수동 공격을 위해 애니메이터 속도를 1로 복구
-        SetAnimatorSpeeds(1f);
-
-        // 일반 수동 공격 트리거
-        TriggerAllAnimators(MANUALATTACK_TRIGGER);
-
-        float animationLength = bodyAnimator.GetCurrentAnimatorStateInfo(0).length;
-
-        // 애니메이션만 재생하고 데미지는 적용하지 않음
-        yield return new WaitForSeconds(animationLength);
-
-        isManualAttackPlaying = false;
-        StartAutoAttack();
+        if (transitionCoroutine != null)
+        {
+            StopCoroutine(transitionCoroutine);
+        }
+        transitionCoroutine = StartCoroutine(TransitionRoutine(toRunning));
     }
 
-    private IEnumerator RunManualAttackRoutine()
+    private IEnumerator TransitionRoutine(bool toRunning)
     {
-        isManualAttackPlaying = true;
+        isTransitioning = true;
 
-        SetAnimatorSpeeds(1f);
+        if (isManualAttackPlaying)
+        {
+            yield return new WaitUntil(() => !isManualAttackPlaying);
+        }
 
-        // 달리기 수동 공격 트리거
-        TriggerAllAnimators(RUNMANUALATTACK_TRIGGER);
-
-        float animationLength = bodyAnimator.GetCurrentAnimatorStateInfo(0).length;
-
-        // 애니메이션만 재생하고 데미지는 적용하지 않음
-        yield return new WaitForSeconds(animationLength);
-
-        isManualAttackPlaying = false;
+        StopAutoAttack();
+        ResetAllTriggers();
         StartAutoAttack();
+
+        isTransitioning = false;
+        transitionCoroutine = null;
+    }
+
+    private void StartAutoAttack()
+    {
+        if (autoAttackCoroutine != null)
+        {
+            StopCoroutine(autoAttackCoroutine);
+        }
+        autoAttackCoroutine = StartCoroutine(AutoAttackRoutine());
+    }
+
+    private void StopAutoAttack()
+    {
+        if (autoAttackCoroutine != null)
+        {
+            StopCoroutine(autoAttackCoroutine);
+            autoAttackCoroutine = null;
+        }
     }
 
     private IEnumerator AutoAttackRoutine()
@@ -241,7 +221,7 @@ public class PlayerController : MonoBehaviour
 
         while (true)
         {
-            if (isInitialized && !isManualAttackPlaying)
+            if (isInitialized && !isManualAttackPlaying && !isTransitioning)
             {
                 elapsedTime += Time.deltaTime;
 
@@ -254,10 +234,13 @@ public class PlayerController : MonoBehaviour
                         AudioManager.Instance.PlaySFX(autoAttackSound);
                     }
 
-                    // 달리기 중일 때만 RunAutoAttack 트리거 사용
                     if (BackgroundScroller.Instance.IsScrolling)
                     {
                         TriggerAllAnimators(RUNAUTOATTACK_TRIGGER);
+                    }
+                    else
+                    {
+                        ResetAllTriggers();
                     }
 
                     PerformAttack(BackgroundScroller.Instance.IsScrolling ? "달리기 자동" : "자동");
@@ -267,12 +250,81 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void TriggerManualAttack()
+    {
+        if (isTransitioning) return;
+
+        PerformAttack(BackgroundScroller.Instance.IsScrolling ? "달리기 수동" : "수동");
+
+        if (!isManualAttackPlaying)
+        {
+            StopAutoAttack();
+            StartCoroutine(BackgroundScroller.Instance.IsScrolling ?
+                RunManualAttackRoutine() : ManualAttackRoutine());
+        }
+    }
+
+    private IEnumerator ManualAttackRoutine()
+    {
+        isManualAttackPlaying = true;
+        SetAnimatorSpeeds(1f);
+        TriggerAllAnimators(MANUALATTACK_TRIGGER);
+
+        yield return new WaitForSeconds(bodyAnimator.GetCurrentAnimatorStateInfo(0).length);
+
+        isManualAttackPlaying = false;
+
+        if (!isTransitioning)
+        {
+            StartAutoAttack();
+        }
+    }
+
+    private IEnumerator RunManualAttackRoutine()
+    {
+        isManualAttackPlaying = true;
+        SetAnimatorSpeeds(1f);
+        TriggerAllAnimators(RUNMANUALATTACK_TRIGGER);
+
+        yield return new WaitForSeconds(bodyAnimator.GetCurrentAnimatorStateInfo(0).length);
+
+        isManualAttackPlaying = false;
+
+        if (!isTransitioning)
+        {
+            StartAutoAttack();
+        }
+    }
+
+    private void ResetAllTriggers()
+    {
+        if (!isTransitioning)
+        {
+            foreach (var animator in new[] { gunAnimator, bodyAnimator, frontHandAnimator, effectAnimator })
+            {
+                if (animator != null)
+                {
+                    foreach (var parameter in animator.parameters)
+                    {
+                        if (parameter.type == AnimatorControllerParameterType.Trigger)
+                        {
+                            animator.ResetTrigger(parameter.name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void TriggerAllAnimators(string triggerName)
     {
-        gunAnimator?.SetTrigger(triggerName);
-        bodyAnimator?.SetTrigger(triggerName);
-        frontHandAnimator?.SetTrigger(triggerName);
-        effectAnimator?.SetTrigger(triggerName);
+        if (!isTransitioning)
+        {
+            gunAnimator?.SetTrigger(triggerName);
+            bodyAnimator?.SetTrigger(triggerName);
+            frontHandAnimator?.SetTrigger(triggerName);
+            effectAnimator?.SetTrigger(triggerName);
+        }
     }
 
     private void SetAnimatorSpeeds(float speed)
