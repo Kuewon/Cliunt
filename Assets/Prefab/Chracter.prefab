@@ -112,7 +112,7 @@ GameObject:
   - component: {fileID: 7950041655294902712}
   - component: {fileID: 1958741896576900203}
   - component: {fileID: 4174001195609078915}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Chracter
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -126,7 +126,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3108158912925631082}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -161,7 +161,7 @@ MonoBehaviour:
   effectAnimator: {fileID: 1437685640583697597}
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1
   autoAttackSound: {fileID: 8300000, guid: 9c1aee3bcc1e0431a97b0c28e41e60e3, type: 3}
 --- !u!114 &5932504223982468194
 MonoBehaviour:
@@ -314,7 +314,7 @@ GameObject:
   - component: {fileID: 5629772123963928916}
   - component: {fileID: 2171694627781182894}
   - component: {fileID: 1006905869880857072}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: HealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -378,7 +378,7 @@ GameObject:
   - component: {fileID: 1783656979582339480}
   - component: {fileID: 8395234371567179484}
   - component: {fileID: 5017937291656704068}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -455,7 +455,7 @@ GameObject:
   - component: {fileID: 3961043874565397207}
   - component: {fileID: 5549017795927056373}
   - component: {fileID: 7909250891044093638}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Gun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -745,7 +745,7 @@ GameObject:
   - component: {fileID: 6844542667467063283}
   - component: {fileID: 3114155860536037774}
   - component: {fileID: 5309210049107655624}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}

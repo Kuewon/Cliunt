@@ -37,8 +37,11 @@ public class PlayerController : MonoBehaviour
     private const string RUNAUTOATTACK_TRIGGER = "RunAutoAttack";
     private const string RUNMANUALATTACK_TRIGGER = "RunManualAttack";
 
+    private ParallaxBackgroundScroller backgroundScroller;
+
     private void Awake()
     {
+        // 컴포넌트 찾기
         if (gunAnimator == null)
         {
             Transform gunTransform = transform.Find("Gun");
@@ -76,6 +79,16 @@ public class PlayerController : MonoBehaviour
         }
 
         rectTransform = GetComponent<RectTransform>();
+
+        backgroundScroller = ParallaxBackgroundScroller.Instance;
+        if (backgroundScroller == null)
+        {
+            backgroundScroller = FindObjectOfType<ParallaxBackgroundScroller>();
+            if (backgroundScroller == null)
+            {
+                Debug.LogError("ParallaxBackgroundScroller를 찾을 수 없습니다!");
+            }
+        }
     }
 
     private void Start()
@@ -93,9 +106,9 @@ public class PlayerController : MonoBehaviour
             Debug.Log("⚠️ 구글 시트 데이터 로드 대기 중... 기본 스탯 사용");
         }
 
-        if (BackgroundScroller.Instance != null)
+        if (backgroundScroller != null)
         {
-            BackgroundScroller.Instance.OnScrollUpdate += OnScrollStateChanged;
+            backgroundScroller.OnScrollUpdate += OnScrollStateChanged;
         }
 
         StartAutoAttack();
@@ -105,9 +118,9 @@ public class PlayerController : MonoBehaviour
     {
         GoogleSheetsManager.OnDataLoadComplete -= InitializeStats;
 
-        if (BackgroundScroller.Instance != null)
+        if (backgroundScroller != null)
         {
-            BackgroundScroller.Instance.OnScrollUpdate -= OnScrollStateChanged;
+            backgroundScroller.OnScrollUpdate -= OnScrollStateChanged;
         }
     }
 
@@ -163,7 +176,7 @@ public class PlayerController : MonoBehaviour
         {
             if (!isTransitioning)
             {
-                StartTransition(BackgroundScroller.Instance.IsScrolling);
+                StartTransition(backgroundScroller.IsScrolling);
             }
         }
     }
@@ -234,7 +247,7 @@ public class PlayerController : MonoBehaviour
                         AudioManager.Instance.PlaySFX(autoAttackSound);
                     }
 
-                    if (BackgroundScroller.Instance.IsScrolling)
+                    if (backgroundScroller.IsScrolling)
                     {
                         TriggerAllAnimators(RUNAUTOATTACK_TRIGGER);
                     }
@@ -243,23 +256,24 @@ public class PlayerController : MonoBehaviour
                         ResetAllTriggers();
                     }
 
-                    PerformAttack(BackgroundScroller.Instance.IsScrolling ? "달리기 자동" : "자동");
+                    PerformAttack(backgroundScroller.IsScrolling ? "달리기 자동" : "자동");
                 }
             }
             yield return null;
         }
     }
 
+
     public void TriggerManualAttack()
     {
         if (isTransitioning) return;
 
-        PerformAttack(BackgroundScroller.Instance.IsScrolling ? "달리기 수동" : "수동");
+        PerformAttack(backgroundScroller.IsScrolling ? "달리기 수동" : "수동");
 
         if (!isManualAttackPlaying)
         {
             StopAutoAttack();
-            StartCoroutine(BackgroundScroller.Instance.IsScrolling ?
+            StartCoroutine(backgroundScroller.IsScrolling ?
                 RunManualAttackRoutine() : ManualAttackRoutine());
         }
     }

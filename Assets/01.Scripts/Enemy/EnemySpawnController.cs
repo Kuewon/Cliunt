@@ -98,16 +98,7 @@ public class EnemySpawnController : MonoBehaviour
         float width = topIngameRect.rect.width;
         float baseSpawnX;
 
-        if (isStageTransitioning)
-        {
-            // 스테이지 전환 중일 때는 현재 width의 80% 지점에서 스폰
-            baseSpawnX = width * 0.8f;
-        }
-        else
-        {
-            // 첫 스테이지나 일반 웨이브에서는 현재 스테이지 끝 + 80% 지점에서 스폰
-            baseSpawnX = width + (width * 0.8f);
-        }
+        baseSpawnX = width * 0.8f;
 
         // x축 랜덤 오프셋 추가 (기본 위치에서 ±100 범위)
         float randomXOffset = UnityEngine.Random.Range(-100f, 100f);
