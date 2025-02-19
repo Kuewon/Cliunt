@@ -254,18 +254,18 @@ public class EquipmentUI : MonoBehaviour
     
     public void UpdateBulletUI()
     {
-        int equippedIndex = EquipmentManager.Instance.GetEquippedBulletIndex();
+        int currentBulletIndex = EquipmentManager.Instance.GetCurrentBulletIndex();
         string sheetName = "Bullet";
 
-        var bulletData = GameData.Instance.GetRow(sheetName, equippedIndex);
+        var bulletData = GameData.Instance.GetRow(sheetName, currentBulletIndex);
         if (bulletData == null) return;
 
-        string name = GameData.Instance.GetString(sheetName, equippedIndex, "bulletName", "이름 없음");
-        string grade = GetGradeText(GameData.Instance.GetInt(sheetName, equippedIndex, "bulletGrade", 0));
-        float damage = GameData.Instance.GetFloat(sheetName, equippedIndex, "bulletBaseDamage", 0f);
-        string description = GameData.Instance.GetString(sheetName, equippedIndex, "bulletDescription", "설명 없음");
-        int baseLevel = GameData.Instance.GetInt(sheetName, equippedIndex, "bulletBaseLevel", 1);
-        float effect = GameData.Instance.GetFloat(sheetName, equippedIndex, "bulletBuffEffect", 0f);
+        string name = GameData.Instance.GetString(sheetName, currentBulletIndex, "bulletName", "이름 없음");
+        string grade = GetGradeText(GameData.Instance.GetInt(sheetName, currentBulletIndex, "bulletGrade", 0));
+        float damage = GameData.Instance.GetFloat(sheetName, currentBulletIndex, "bulletBaseDamage", 0f);
+        string description = GameData.Instance.GetString(sheetName, currentBulletIndex, "bulletDescription", "설명 없음");
+        int baseLevel = GameData.Instance.GetInt(sheetName, currentBulletIndex, "bulletBaseLevel", 1);
+        float effect = GameData.Instance.GetFloat(sheetName, currentBulletIndex, "bulletBuffEffect", 0f);
 
         if (bulletNameText != null) bulletNameText.text = name;
         if (bulletGradeText != null) bulletGradeText.text = $"등급: {grade}";

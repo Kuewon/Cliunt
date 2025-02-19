@@ -155,12 +155,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 애니메이션 이벤트를 통해 호출될 메서드
-    public void OnTransitionAnimationComplete()
-    {
-        transitionCompleted = true;
-    }
-
     void OnDestroy()
     {
         if (WaveManager.Instance != null)

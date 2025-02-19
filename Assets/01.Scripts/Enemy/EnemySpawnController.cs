@@ -64,11 +64,6 @@ public class EnemySpawnController : MonoBehaviour
                 Debug.LogError($"Enemy Prefab {i}가 할당되지 않았습니다!");
                 continue;
             }
-
-            if (!enemyPrefabs[i].activeSelf)
-            {
-                Debug.LogWarning($"Enemy Prefab {i}가 비활성화되어 있습니다. 프리팹을 활성화해주세요!");
-            }
         }
 
         if (enemyAnimators == null || enemyAnimators.Length != 3)
