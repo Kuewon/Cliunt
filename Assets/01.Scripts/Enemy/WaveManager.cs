@@ -28,6 +28,8 @@ public class WaveManager : MonoBehaviour
 
     [SerializeField] private float _enemyDropGoldMultiplier = 1.0f;
     public float enemyDropGoldMultiplier => _enemyDropGoldMultiplier;
+    
+    private bool isInitialStageLoad = true;
 
     public event Action<int> OnStageChanged;
     public event Action OnAllStagesCompleted;
@@ -48,7 +50,7 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
-        skipStageTransition = true;
+        isInitialStageLoad = true;  // 게임 시작시 플래그 설정
         LoadWaveData();
         currentWaveIndex = -1;
         StartNextWave();
@@ -248,7 +250,6 @@ public class WaveManager : MonoBehaviour
             yield return new WaitForSeconds(nextStageDelay);
 
             currentStage++;
-            skipStageTransition = false;
             LoadWaveData();
 
             // OnWaveCompleted 호출
@@ -285,12 +286,13 @@ public class WaveManager : MonoBehaviour
 
     public bool ShouldPlayStageTransition()
     {
-        if (skipStageTransition)
+        // 게임 처음 시작할 때는 트랜지션을 재생하지 않음
+        if (isInitialStageLoad)
         {
-            skipStageTransition = false;
+            isInitialStageLoad = false;  // 플래그 해제
             return false;
         }
-        return true;
+        return true;  // 그 외의 스테이지 전환에서는 트랜지션 재생
     }
 
     // 상태 확인용 메서드들
