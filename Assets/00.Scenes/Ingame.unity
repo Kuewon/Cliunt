@@ -2071,6 +2071,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 625201360}
   m_CullTransparentMesh: 1
+--- !u!114 &647673395 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2407717794517015916, guid: ab59f040ef7f346729706d381d964503, type: 3}
+  m_PrefabInstance: {fileID: 2546599853147135860}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &725692396
 GameObject:
   m_ObjectHideFlags: 0
@@ -10958,6 +10969,42 @@ PrefabInstance:
     - target: {fileID: 6957127847745385770, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
       propertyPath: m_Name
       value: Top_UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: dimObject
+      value: 
+      objectReference: {fileID: 889391318748932893}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: statsPanel
+      value: 
+      objectReference: {fileID: 8184691852048054836}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: closeButton
+      value: 
+      objectReference: {fileID: 647673395}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: attackRangeText
+      value: 
+      objectReference: {fileID: 7993938926186867263}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: attackSpeedText
+      value: 
+      objectReference: {fileID: 6195488280702825023}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: attackDamageText
+      value: 
+      objectReference: {fileID: 3349232971981295387}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: criticalChanceText
+      value: 
+      objectReference: {fileID: 4345858964289721803}
+    - target: {fileID: 7066067822667636895, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: criticalMultiplierText
+      value: 
+      objectReference: {fileID: 1710503499201690748}
+    - target: {fileID: 8536729176938271404, guid: 1de602bc9e53a45afac8218891f73dea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -453,4 +453,10 @@ public class PlayerController : MonoBehaviour
         Vector3 center = rectTransform.position;
         Gizmos.DrawWireSphere(center, attackRange);
     }
+    
+    public float GetAttackDamage() => attackDamage;
+    public float GetAttackSpeed() => 1f / attackInterval;
+    public float GetAttackRange() => attackRange;
+    public float GetCriticalChance() => criticalChance;
+    public float GetCriticalMultiplier() => criticalMultiplier;
 }
