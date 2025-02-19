@@ -11,7 +11,7 @@ public class EnemySpawnController : MonoBehaviour
     [SerializeField] private RuntimeAnimatorController[] enemyAnimators; // 각 적 타입별 애니메이터
 
     [Header("Spawn Settings")]
-    [SerializeField] private float spawnXOffsetPercentage = 0.8f;  // 화면 너비의 80% 위치
+    [SerializeField] private float spawnXOffsetPercentage = 0.2f;
     [SerializeField, Range(0f, 1f)] private float spawnYOffsetPercentage = 0.5f;  // 화면 높이의 Y% 위치
 
 
@@ -120,7 +120,7 @@ public class EnemySpawnController : MonoBehaviour
         float width = topIngameRect.rect.width;
         float height = topIngameRect.rect.height;
         
-        float baseSpawnX = width * spawnXOffsetPercentage;
+        float baseSpawnX = width * (1f + spawnXOffsetPercentage);
         float randomXOffset = UnityEngine.Random.Range(-150f, 100f);
         float spawnX = (baseSpawnX + randomXOffset) - (width / 2);
         
@@ -221,6 +221,12 @@ public class EnemySpawnController : MonoBehaviour
                 attackRange,
                 gold
             );
+
+            // WaveMovementController에 등록 추가
+            if (WaveMovementController.Instance != null)
+            {
+                WaveMovementController.Instance.RegisterEnemy(moveController);
+            }
         }
 
         if (health != null && WaveManager.Instance != null)

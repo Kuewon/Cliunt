@@ -31,9 +31,10 @@ public class EnemyMoveController : MonoBehaviour
     private readonly string PARAM_IS_WALKING = "IsWalking"; // bool
     
     private RangedHitEffectsManager hitEffectsManager;
-    
     private BoxCollider2D myCollider;
     private BoxCollider2D playerCollider;
+    
+    public Vector2 InitialPosition { get; set; }
 
     private void Awake()
     {
@@ -66,12 +67,12 @@ public class EnemyMoveController : MonoBehaviour
             animator.SetBool(PARAM_IS_WALKING, true);
         }
 
-        if (BackgroundScroller.Instance != null)
+        if (ParallaxBackgroundScroller.Instance != null)
         {
-            if (BackgroundScroller.Instance.IsScrolling)
+            if (ParallaxBackgroundScroller.Instance.IsScrolling)
             {
-                BackgroundScroller.Instance.OnScrollUpdate += SyncWithBackground;
-                BackgroundScroller.Instance.OnScrollComplete += StartMoving;
+                ParallaxBackgroundScroller.Instance.OnScrollUpdate += SyncWithBackground;
+                ParallaxBackgroundScroller.Instance.OnScrollComplete += StartMoving;
             }
             else
             {
@@ -98,6 +99,7 @@ public class EnemyMoveController : MonoBehaviour
         }
     }
 
+
     private void HandleDeath()
     {
         if (isDestroyed) return;
@@ -105,10 +107,10 @@ public class EnemyMoveController : MonoBehaviour
         isDestroyed = true;
         SetMovementEnabled(false);
 
-        if (BackgroundScroller.Instance != null)
+        if (ParallaxBackgroundScroller.Instance != null)
         {
-            BackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
-            BackgroundScroller.Instance.OnScrollComplete -= StartMoving;
+            ParallaxBackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
+            ParallaxBackgroundScroller.Instance.OnScrollComplete -= StartMoving;
         }
 
         if (WaveMovementController.Instance != null)
@@ -134,7 +136,10 @@ public class EnemyMoveController : MonoBehaviour
 
     private void OnDestroy()
     {
-        HandleDeath();
+        if (WaveMovementController.Instance != null)
+        {
+            WaveMovementController.Instance.UnregisterEnemy(this);
+        }
     }
 
     public void SetStats(float damage, float speed, float movement, float range, float gold)
@@ -152,8 +157,10 @@ public class EnemyMoveController : MonoBehaviour
     {
         if (isDestroyed) return;
 
-        float totalScroll = BackgroundScroller.Instance.GetScrollAmount();
+        // ParallaxBackgroundScroller의 스크롤 거리 사용
         Vector2 newPos = initialPosition;
+        // 화면 너비만큼 스크롤
+        float totalScroll = GetComponent<RectTransform>().rect.width;
         newPos.x -= totalScroll * scrollProgress;
         myRectTransform.anchoredPosition = newPos;
     }
@@ -162,10 +169,10 @@ public class EnemyMoveController : MonoBehaviour
     {
         if (isDestroyed) return;
 
-        if (BackgroundScroller.Instance != null)
+        if (ParallaxBackgroundScroller.Instance != null)
         {
-            BackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
-            BackgroundScroller.Instance.OnScrollComplete -= StartMoving;
+            ParallaxBackgroundScroller.Instance.OnScrollUpdate -= SyncWithBackground;
+            ParallaxBackgroundScroller.Instance.OnScrollComplete -= StartMoving;
         }
         canMove = true;
     }

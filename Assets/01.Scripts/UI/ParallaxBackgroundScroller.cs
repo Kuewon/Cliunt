@@ -6,6 +6,10 @@ using System;
 public class ParallaxBackgroundScroller : MonoBehaviour
 {
     public static ParallaxBackgroundScroller Instance { get; private set; }
+    public bool IsScrolling => isScrolling;
+    
+    public event Action OnScrollComplete;
+    public event Action<float> OnScrollUpdate;
 
     [System.Serializable]
     public class BackgroundLayer
@@ -13,19 +17,14 @@ public class ParallaxBackgroundScroller : MonoBehaviour
         public RectTransform image1;
         public RectTransform image2;
         [Range(0f, 1f)]
-        public float scrollSpeed = 1f; // 1ÀÌ °¡Àå ºü¸§, 0¿¡ °¡±î¿ï¼ö·Ï ´À¸²
+        public float scrollAmount = 1f;
     }
 
-    [SerializeField] private BackgroundLayer[] backgroundLayers;
-    private float scrollDuration = 2.5f;
+    [SerializeField] public BackgroundLayer[] backgroundLayers;
+    [SerializeField] private float scrollSpeed = 300f;
+    [SerializeField] private float scrollDuration = 2f;
     private float[] layerWidths;
-    private bool[] isImage1Active;
     private bool isScrolling = false;
-
-    public event Action OnScrollComplete;
-    public event Action<float> OnScrollUpdate;
-
-    public bool IsScrolling => isScrolling;
 
     private void Awake()
     {
@@ -38,171 +37,94 @@ public class ParallaxBackgroundScroller : MonoBehaviour
             Destroy(gameObject);
         }
 
-        // ¹è°æ ·¹ÀÌ¾î ÃÊ±âÈ­
-        layerWidths = new float[backgroundLayers.Length];
-        isImage1Active = new bool[backgroundLayers.Length];
-        for (int i = 0; i < backgroundLayers.Length; i++)
-        {
-            isImage1Active[i] = true;
-        }
-    }
-
-    private void Start()
-    {
-        ValidateBackgrounds();
         InitializeBackgrounds();
-
-        if (WaveManager.Instance != null)
-        {
-            WaveManager.Instance.OnWaveCompleted += OnWaveCompleted;
-        }
-    }
-
-    private void ValidateBackgrounds()
-    {
-        if (backgroundLayers == null || backgroundLayers.Length == 0)
-        {
-            Debug.LogError("No background layers assigned!");
-            return;
-        }
-
-        for (int i = 0; i < backgroundLayers.Length; i++)
-        {
-            if (backgroundLayers[i].image1 == null || backgroundLayers[i].image2 == null)
-            {
-                Debug.LogError($"Background images not assigned for layer {i}!");
-                return;
-            }
-            layerWidths[i] = backgroundLayers[i].image1.rect.width;
-        }
     }
 
     private void InitializeBackgrounds()
     {
+        layerWidths = new float[backgroundLayers.Length];
+        
         for (int i = 0; i < backgroundLayers.Length; i++)
         {
-            // Ã¹ ¹øÂ° ÀÌ¹ÌÁö´Â ½ÃÀÛÁ¡¿¡
+            layerWidths[i] = backgroundLayers[i].image1.rect.width;
             backgroundLayers[i].image1.anchoredPosition = Vector2.zero;
-            // µÎ ¹øÂ° ÀÌ¹ÌÁö´Â Ã¹ ¹øÂ° ÀÌ¹ÌÁö ¹Ù·Î ¿À¸¥ÂÊ¿¡
             backgroundLayers[i].image2.anchoredPosition = new Vector2(layerWidths[i], 0);
         }
     }
 
-    public void OnWaveCompleted()
+    private void Update()
     {
-        if (!isScrolling)
-        {
-            PrepareNextBackgrounds();
+        if (!isScrolling) return;
 
-            if (WaveMovementController.Instance != null)
-            {
-                WaveMovementController.Instance.ResetWaveMovement();
-            }
-            StartCoroutine(ScrollBackgrounds());
-        }
-    }
-
-    private void PrepareNextBackgrounds()
-    {
         for (int i = 0; i < backgroundLayers.Length; i++)
         {
-            if (isImage1Active[i])
-            {
-                backgroundLayers[i].image2.anchoredPosition = new Vector2(layerWidths[i], 0);
-                backgroundLayers[i].image1.anchoredPosition = Vector2.zero;
-            }
-            else
-            {
-                backgroundLayers[i].image1.anchoredPosition = new Vector2(layerWidths[i], 0);
-                backgroundLayers[i].image2.anchoredPosition = Vector2.zero;
-            }
+            MoveLayer(i);
+            CheckAndResetPosition(i);
         }
     }
 
-    private IEnumerator ScrollBackgrounds()
+    private void MoveLayer(int index)
+    {
+        var layer = backgroundLayers[index];
+        float moveAmount = scrollSpeed * layer.scrollAmount * Time.deltaTime;
+
+        // í˜„ìž¬ ìœ„ì¹˜ì—ì„œ ì™¼ìª½ìœ¼ë¡œ ì´ë™
+        Vector2 pos1 = layer.image1.anchoredPosition;
+        Vector2 pos2 = layer.image2.anchoredPosition;
+
+        pos1 += Vector2.left * moveAmount;
+        pos2 += Vector2.left * moveAmount;
+
+        layer.image1.anchoredPosition = pos1;
+        layer.image2.anchoredPosition = pos2;
+    }
+
+    private void CheckAndResetPosition(int index)
+    {
+        var layer = backgroundLayers[index];
+        float width = layerWidths[index];
+
+        // ì²« ë²ˆì§¸ ì´ë¯¸ì§€ê°€ í™”ë©´ ë°–ìœ¼ë¡œ ì™„ì „ížˆ ë‚˜ê°”ëŠ”ì§€ ì²´í¬
+        if (layer.image1.anchoredPosition.x < -width)
+        {
+            // ë‘ ë²ˆì§¸ ì´ë¯¸ì§€ì˜ ì˜¤ë¥¸ìª½ì— ìž¬ë°°ì¹˜
+            layer.image1.anchoredPosition = layer.image2.anchoredPosition + new Vector2(width, 0);
+            
+            // ì°¸ì¡° ìŠ¤ì™‘
+            var temp = layer.image1;
+            layer.image1 = layer.image2;
+            layer.image2 = temp;
+        }
+    }
+
+    private IEnumerator ScrollCoroutine()
     {
         isScrolling = true;
         float elapsedTime = 0f;
 
-        // °¢ ·¹ÀÌ¾îÀÇ ½ÃÀÛ À§Ä¡¿Í ¸ñÇ¥ À§Ä¡ ÀúÀå
-        Vector2[] currentStartPositions = new Vector2[backgroundLayers.Length];
-        Vector2[] nextStartPositions = new Vector2[backgroundLayers.Length];
-        Vector2[] currentTargetPositions = new Vector2[backgroundLayers.Length];
-        Vector2[] nextTargetPositions = new Vector2[backgroundLayers.Length];
-
-        for (int i = 0; i < backgroundLayers.Length; i++)
-        {
-            RectTransform currentBg = isImage1Active[i] ? backgroundLayers[i].image1 : backgroundLayers[i].image2;
-            RectTransform nextBg = isImage1Active[i] ? backgroundLayers[i].image2 : backgroundLayers[i].image1;
-
-            currentStartPositions[i] = currentBg.anchoredPosition;
-            nextStartPositions[i] = nextBg.anchoredPosition;
-            currentTargetPositions[i] = currentStartPositions[i] + Vector2.left * layerWidths[i];
-            nextTargetPositions[i] = nextStartPositions[i] + Vector2.left * layerWidths[i];
-        }
-
         while (elapsedTime < scrollDuration)
         {
             elapsedTime += Time.deltaTime;
-            float t = elapsedTime / scrollDuration;
-            float smoothT = Mathf.SmoothStep(0f, 1f, t);
-
-            for (int i = 0; i < backgroundLayers.Length; i++)
-            {
-                float speed = backgroundLayers[i].scrollSpeed;
-
-                // ÆÐ·²·¢½º È¿°ú¸¦ À§ÇÑ º¸°£ °è»ê
-                // speed°¡ 1ÀÏ ¶§´Â ÀÏ¹Ý º¸°£°ú µ¿ÀÏ
-                // speed°¡ ÀÛÀ»¼ö·Ï Áß°£ °úÁ¤Àº ÃµÃµÈ÷ ¿òÁ÷ÀÌÁö¸¸ °á±¹ ¸ñÇ¥ÁöÁ¡¿¡´Â µµ´Þ
-                float layerT;
-                if (smoothT < 0.5f)
-                {
-                    // Àü¹ÝºÎ: °¢ ·¹ÀÌ¾îÀÇ ¼Óµµ¿¡ µû¶ó ´Ù¸£°Ô ¿òÁ÷ÀÓ
-                    layerT = smoothT * speed * 2f;
-                }
-                else
-                {
-                    // ÈÄ¹ÝºÎ: ¸ñÇ¥ÁöÁ¡À» ÇâÇØ °¡¼Ó
-                    float remainingDistance = 1f - (speed * 0.5f); // Àü¹ÝºÎ¿¡¼­ ÀÌµ¿ÇÏÁö ¾ÊÀº °Å¸®
-                    float normalizedT = (smoothT - 0.5f) * 2f; // 0.5~1 ¹üÀ§¸¦ 0~1·Î Á¤±ÔÈ­
-                    layerT = (speed * 0.5f) + (remainingDistance * normalizedT);
-                }
-
-                // ÃÖÁ¾ À§Ä¡ º¸°£
-                layerT = Mathf.Clamp01(layerT); // 0~1 ¹üÀ§ º¸Àå
-
-                RectTransform currentBg = isImage1Active[i] ? backgroundLayers[i].image1 : backgroundLayers[i].image2;
-                RectTransform nextBg = isImage1Active[i] ? backgroundLayers[i].image2 : backgroundLayers[i].image1;
-
-                currentBg.anchoredPosition = Vector2.Lerp(currentStartPositions[i], currentTargetPositions[i], layerT);
-                nextBg.anchoredPosition = Vector2.Lerp(nextStartPositions[i], nextTargetPositions[i], layerT);
-            }
-
-            OnScrollUpdate?.Invoke(smoothT);
+            float progress = elapsedTime / scrollDuration;
+            OnScrollUpdate?.Invoke(progress);
             yield return null;
-        }
-
-        // Á¤È®ÇÑ ÃÖÁ¾ À§Ä¡ ¼³Á¤
-        for (int i = 0; i < backgroundLayers.Length; i++)
-        {
-            RectTransform currentBg = isImage1Active[i] ? backgroundLayers[i].image1 : backgroundLayers[i].image2;
-            RectTransform nextBg = isImage1Active[i] ? backgroundLayers[i].image2 : backgroundLayers[i].image1;
-
-            currentBg.anchoredPosition = currentTargetPositions[i];
-            nextBg.anchoredPosition = nextTargetPositions[i];
-
-            isImage1Active[i] = !isImage1Active[i];
         }
 
         isScrolling = false;
         OnScrollComplete?.Invoke();
     }
 
-    private void OnDestroy()
+    public void StartScroll()
     {
-        if (WaveManager.Instance != null)
+        if (!isScrolling)
         {
-            WaveManager.Instance.OnWaveCompleted -= OnWaveCompleted;
+            StartCoroutine(ScrollCoroutine());
         }
+    }
+
+    public void StopScroll()
+    {
+        isScrolling = false;
+        OnScrollComplete?.Invoke();
     }
 }

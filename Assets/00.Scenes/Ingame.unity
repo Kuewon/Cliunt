@@ -1989,16 +1989,18 @@ MonoBehaviour:
   backgroundLayers:
   - image1: {fileID: 1257641951}
     image2: {fileID: 79200666}
-    scrollSpeed: 0.25
+    scrollAmount: 0.4
   - image1: {fileID: 1554991061}
     image2: {fileID: 1165798580}
-    scrollSpeed: 0.5
+    scrollAmount: 0.6
   - image1: {fileID: 2067183319}
     image2: {fileID: 912114251}
-    scrollSpeed: 0.75
+    scrollAmount: 0.8
   - image1: {fileID: 339845474}
     image2: {fileID: 1174368611}
-    scrollSpeed: 1
+    scrollAmount: 1
+  scrollSpeed: 300
+  scrollDuration: 3
 --- !u!4 &763048344
 Transform:
   m_ObjectHideFlags: 0
@@ -22140,6 +22142,10 @@ PrefabInstance:
     - target: {fileID: 1182494262626753761, guid: 51e1e0b2245b24da687cb6fd3e0a35c2, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1792862390291582450, guid: 51e1e0b2245b24da687cb6fd3e0a35c2, type: 3}
+      propertyPath: spawnXOffsetPercentage
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 1792862390291582450, guid: 51e1e0b2245b24da687cb6fd3e0a35c2, type: 3}
       propertyPath: spawnYOffsetPercentage
