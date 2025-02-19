@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -160,14 +161,33 @@ public class PlayerController : MonoBehaviour
         Debug.Log($"ℹ️ 기본 스탯으로 초기화됨");
     }
 
-    private void InitializeStats()
+    public void InitializeStats()
     {
         var statsData = GameData.Instance.GetRow("PlayerStats", 0);
         if (statsData == null) return;
 
-        if (TryParseValue(statsData, "baseAttackDamage", out float damage))
-            attackDamage = damage;
+        // Get base stats from PlayerStats sheet
+        if (TryParseValue(statsData, "baseAttackDamage", out float baseDamage))
+            attackDamage = baseDamage;
 
+        // Get equipped revolver's damage
+        var userData = UserDataManager.GetCurrentUserData();
+        if (userData?.data != null && userData.data.ContainsKey("playerRevolverIndex"))
+        {
+            int revolverIndex = Convert.ToInt32(userData.data["playerRevolverIndex"]);
+            float revolverDamage = GameData.Instance.GetFloat("Revolver", revolverIndex, "revolverBaseDamage", 0f);
+            
+            // Add revolver damage to base damage
+            attackDamage += revolverDamage;
+            
+            Debug.Log($"✅ 데미지 계산 완료! 기본: {baseDamage}, 리볼버: {revolverDamage}, 최종: {attackDamage}");
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ 장착된 리볼버 정보를 찾을 수 없습니다.");
+        }
+
+        // Initialize other stats as before
         if (TryParseValue(statsData, "baseAttackSpeed", out float speed))
             attackInterval = 1f / speed;
 

@@ -29,7 +29,8 @@ public class EquipmentManager : MonoBehaviour
     [SerializeField] private bool showDebugLog = true;
 
     private UserDataManager userDataManager;
-    private SpinnerController spinnerController; // 추가: SpinnerController 참조
+    private SpinnerController spinnerController;
+    private PlayerController playerController;
     private int equippedRevolverIndex = 0;
     private int equippedCylinderIndex = 0;
     private int equippedBulletIndex = 0;
@@ -53,6 +54,7 @@ public class EquipmentManager : MonoBehaviour
 
         // 추가: SpinnerController 찾기
         UpdateSpinnerControllerReference();
+        UpdatePlayerControllerReference();
     }
 
     // 추가: SpinnerController 참조 업데이트 메서드
@@ -62,6 +64,15 @@ public class EquipmentManager : MonoBehaviour
         if (spinnerController == null && showDebugLog)
         {
             Debug.LogWarning("⚠️ SpinnerController를 찾을 수 없습니다!");
+        }
+    }
+    
+    private void UpdatePlayerControllerReference()
+    {
+        playerController = FindObjectOfType<PlayerController>();
+        if (playerController == null && showDebugLog)
+        {
+            Debug.LogWarning("⚠️ PlayerController를 찾을 수 없습니다!");
         }
     }
 
@@ -88,6 +99,25 @@ public class EquipmentManager : MonoBehaviour
         SaveRevolverData();
         
         FindObjectOfType<EquipmentUI>()?.UpdateRevolverUI();
+
+        // 플레이어 스탯 업데이트
+        if (playerController == null)
+        {
+            UpdatePlayerControllerReference();
+        }
+
+        if (playerController != null)
+        {
+            playerController.InitializeStats();
+            if (showDebugLog)
+            {
+                Debug.Log("✅ 리볼버 장착으로 인한 플레이어 스탯 업데이트 완료");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ PlayerController를 찾을 수 없어 스탯 업데이트를 할 수 없습니다!");
+        }
     }
     
     public void EquipCylinder(int index)
