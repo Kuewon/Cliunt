@@ -34,6 +34,7 @@ public class EquipmentManager : MonoBehaviour
     private int equippedRevolverIndex = 0;
     private int equippedCylinderIndex = 0;
     private int equippedBulletIndex = 0;
+    private int[] equippedBullets = new int[6];
     #endregion
 
     #region Unity Events
@@ -134,10 +135,18 @@ public class EquipmentManager : MonoBehaviour
     
     public void EquipBullet(int index)
     {
-        LogEquipmentChange("총알", equippedBulletIndex, index);
-        equippedBulletIndex = index;
-        SaveBulletData();
+        // 모든 슬롯에 동일한 총알 장착
+        for (int i = 0; i < 6; i++)
+        {
+            equippedBullets[i] = index;
+        }
         
+        if (showDebugLog)
+        {
+            Debug.Log($"🎯 모든 슬롯에 총알 {index} 장착 완료");
+        }
+        
+        SaveBulletData();
         FindObjectOfType<EquipmentUI>()?.UpdateBulletUI();
     }
 
@@ -244,11 +253,33 @@ public class EquipmentManager : MonoBehaviour
             var userData = UserDataManager.GetCurrentUserData();
             if (userData?.data == null) return;
 
-            userData.data["playerBulletIndex"] = equippedBulletIndex;
+            // 6개 총알 데이터를 JSON 문자열로 저장
+            userData.data["playerBulletIndices"] = JsonConvert.SerializeObject(equippedBullets);
             UserDataManager.SaveUserData(userData);
-            
+        
             if (showDebugLog)
-                Debug.Log("✅ 총알 데이터 저장 완료");
+            {
+                Debug.Log($"✅ 총알 데이터 저장 완료 (모든 슬롯: {equippedBullets[0]})");
+            }
+
+            // SpinnerController 참조 확인 및 업데이트
+            if (spinnerController == null)
+            {
+                UpdateSpinnerControllerReference();
+            }
+
+            if (spinnerController != null)
+            {
+                spinnerController.UpdateBullettFromEquipment();
+                if (showDebugLog)
+                {
+                    Debug.Log("✅ SpinnerController 총알 상태 업데이트 완료");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("⚠️ SpinnerController를 찾을 수 없어 총알 상태를 업데이트할 수 없습니다!");
+            }
         }
         catch (Exception e)
         {
@@ -263,10 +294,23 @@ public class EquipmentManager : MonoBehaviour
             var userData = UserDataManager.GetCurrentUserData();
             if (userData?.data == null) return;
 
-            equippedBulletIndex = Convert.ToInt32(userData.data["playerBulletIndex"]);
+            if (userData.data.ContainsKey("playerBulletIndices"))
+            {
+                equippedBullets = JsonConvert.DeserializeObject<int[]>(userData.data["playerBulletIndices"].ToString());
+            }
+            else
+            {
+                // 데이터가 없는 경우 모든 슬롯을 0으로 초기화
+                for (int i = 0; i < 6; i++)
+                {
+                    equippedBullets[i] = 0;
+                }
+            }
             
             if (showDebugLog)
-                Debug.Log($"✅ 총알 데이터 로드 완료! 장착된 총알: {equippedBulletIndex}");
+            {
+                Debug.Log($"✅ 총알 데이터 로드 완료! 장착된 총알: {equippedBullets[0]}");
+            }
 
             FindObjectOfType<EquipmentUI>()?.UpdateBulletUI();
         }
@@ -281,6 +325,8 @@ public class EquipmentManager : MonoBehaviour
     public int GetEquippedRevolverIndex() => equippedRevolverIndex;
     public int GetEquippedCylinderIndex() => equippedCylinderIndex;
     public int GetEquippedBulletIndex() => equippedBulletIndex; 
+    public int[] GetEquippedBullets() => equippedBullets;
+    public int GetCurrentBulletIndex() => equippedBullets[0];
     #endregion
 
     #region Debug Helpers

@@ -94,17 +94,22 @@ public class SpinnerController : MonoBehaviour
         }
     }
 
-    private void UpdateBullettFromEquipment()
+    public void UpdateBullettFromEquipment()
     {
         if (equipmentManager != null)
         {
             int equippedBulletIndex = equipmentManager.GetEquippedBulletIndex();
-            bullettStates[0] = equippedBulletIndex;
-            for (int i = 1; i < bullettStates.Length; i++)
+        
+            // 모든 슬롯에 동일한 총알 장착
+            for (int i = 0; i < bullettStates.Length; i++)
             {
-                bullettStates[i] = -1;
+                bullettStates[i] = equippedBulletIndex;
             }
-            Debug.Log($"🎯 장착된 총알 업데이트: {equippedBulletIndex}");
+
+            InitializeBullettImages();
+            UpdateBullettVisibility(); // UI 업데이트를 위해 추가
+        
+            Debug.Log($"🎯 모든 슬롯에 총알 {equippedBulletIndex} 장착 완료");
         }
     }
 
