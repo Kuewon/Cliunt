@@ -85,7 +85,7 @@ public class EnemyHealth : MonoBehaviour
         DamagePopupManager popupManager = FindObjectOfType<DamagePopupManager>();
         if (popupManager != null)
         {
-            popupManager.ShowDamage(transform.position, finalDamage, isCritical);
+            popupManager.ShowDamage(transform.position, finalDamage, isCritical, DamagePopup.EntityType.Enemy);
         }
 
         if (currentHealth <= 0)

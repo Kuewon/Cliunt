@@ -11,7 +11,9 @@ public class EnemySpawnController : MonoBehaviour
     [SerializeField] private RuntimeAnimatorController[] enemyAnimators; // 각 적 타입별 애니메이터
 
     [Header("Spawn Settings")]
-    private float spawnXOffsetPercentage = 0.8f;
+    [SerializeField] private float spawnXOffsetPercentage = 0.8f;  // 화면 너비의 80% 위치
+    [SerializeField, Range(0f, 1f)] private float spawnYOffsetPercentage = 0.5f;  // 화면 높이의 Y% 위치
+
 
     [Header("Debug")]
     [SerializeField] private bool showSpawnRange = true;
@@ -116,118 +118,121 @@ public class EnemySpawnController : MonoBehaviour
         }
 
         float width = topIngameRect.rect.width;
-        float baseSpawnX = width * 0.8f;
-        float randomXOffset = UnityEngine.Random.Range(-100f, 100f);
+        float height = topIngameRect.rect.height;
+        
+        float baseSpawnX = width * spawnXOffsetPercentage;
+        float randomXOffset = UnityEngine.Random.Range(-150f, 100f);
         float spawnX = (baseSpawnX + randomXOffset) - (width / 2);
-        float randomYOffset = UnityEngine.Random.Range(-50f, 50f);
-        float spawnY = playerRect.anchoredPosition.y + randomYOffset;
+        
+        float spawnY = (height * spawnYOffsetPercentage) - (height / 2);
 
         return new Vector2(spawnX, spawnY);
     }
 
     public void SpawnEnemyWithStats(
-        Dictionary<string, object> enemyStats,
-        float healthMultiplier,
-        float attackMultiplier,
-        float attackSpeedMultiplier)
+    Dictionary<string, object> enemyStats,
+    float healthMultiplier,
+    float attackMultiplier,
+    float attackSpeedMultiplier)
+{
+    if (enemyPrefabs == null || topIngameRect == null)
     {
-        if (enemyPrefabs == null || topIngameRect == null)
+        Debug.LogError("필요한 컴포넌트가 없습니다!");
+        return;
+    }
+
+    try
+    {
+        // enemyStats에서 enemyType 가져오기 (0: 근거리, 1: 원거리, 2: 보스)
+        int enemyType;
+        if (!enemyStats.ContainsKey("enemyType"))
         {
-            Debug.LogError("필요한 컴포넌트가 없습니다!");
+            Debug.LogError("enemyStats에 enemyType이 없습니다!");
             return;
         }
 
-        try
+        // enemyType이 int나 float 형태로 들어올 수 있으므로 안전하게 변환
+        if (enemyStats["enemyType"] is int intType)
         {
-            // enemyStats에서 enemyType 가져오기 (0: 근거리, 1: 원거리, 2: 보스)
-            int enemyType;
-            if (!enemyStats.ContainsKey("enemyType"))
-            {
-                Debug.LogError("enemyStats에 enemyType이 없습니다!");
-                return;
-            }
-
-            // enemyType이 int나 float 형태로 들어올 수 있으므로 안전하게 변환
-            if (enemyStats["enemyType"] is int intType)
-            {
-                enemyType = intType;
-            }
-            else if (enemyStats["enemyType"] is float floatType)
-            {
-                enemyType = (int)floatType;
-            }
-            else if (enemyStats["enemyType"] is double doubleType)
-            {
-                enemyType = (int)doubleType;
-            }
-            else
-            {
-                Debug.LogError($"유효하지 않은 enemyType 형식: {enemyStats["enemyType"]?.GetType()}");
-                return;
-            }
-
-            if (enemyType < 0 || enemyType >= enemyPrefabs.Length)
-            {
-                Debug.LogError($"유효하지 않은 enemy type: {enemyType}");
-                return;
-            }
-
-            Vector2 spawnPosition = GetSpawnPosition();
-            float randomYOffset = UnityEngine.Random.Range(-50f, 50f);
-            spawnPosition.y += randomYOffset;
-
-            // 해당 타입의 프리팹으로 적 생성
-            GameObject enemy = Instantiate(enemyPrefabs[enemyType], Vector3.zero, Quaternion.identity, topIngameRect);
-            enemy.SetActive(true); // 생성된 적 활성화
-
-            // 애니메이터 설정
-            Animator animator = enemy.GetComponent<Animator>();
-            if (animator != null && enemyAnimators[enemyType] != null)
-            {
-                animator.runtimeAnimatorController = enemyAnimators[enemyType];
-            }
-
-            RectTransform enemyRect = enemy.GetComponent<RectTransform>();
-            if (enemyRect != null)
-            {
-                enemyRect.anchoredPosition = spawnPosition;
-            }
-
-            var health = enemy.GetComponent<EnemyHealth>();
-            if (health != null)
-            {
-                float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
-                health.SetMaxHealth(baseHealth * healthMultiplier);
-            }
-
-            var moveController = enemy.GetComponent<EnemyMoveController>();
-            if (moveController != null)
-            {
-                float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
-                float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
-                float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
-                float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
-                float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
-
-                moveController.SetStats(
-                    baseAttackDamage * attackMultiplier,
-                    baseAttackSpeed * attackSpeedMultiplier,
-                    movementSpeed,
-                    attackRange,
-                    gold
-                );
-            }
-
-            if (health != null && WaveManager.Instance != null)
-            {
-                WaveManager.Instance.RegisterEnemy(health);
-            }
+            enemyType = intType;
         }
-        catch (Exception e)
+        else if (enemyStats["enemyType"] is float floatType)
         {
-            Debug.LogError($"Error spawning enemy: {e.Message}\n{e.StackTrace}");
+            enemyType = (int)floatType;
+        }
+        else if (enemyStats["enemyType"] is double doubleType)
+        {
+            enemyType = (int)doubleType;
+        }
+        else
+        {
+            Debug.LogError($"유효하지 않은 enemyType 형식: {enemyStats["enemyType"]?.GetType()}");
+            return;
+        }
+
+        if (enemyType < 0 || enemyType >= enemyPrefabs.Length)
+        {
+            Debug.LogError($"유효하지 않은 enemy type: {enemyType}");
+            return;
+        }
+
+        Vector2 spawnPosition = GetSpawnPosition();
+        
+        // 해당 타입의 프리팹으로 적 생성
+        GameObject enemy = Instantiate(enemyPrefabs[enemyType], Vector3.zero, Quaternion.identity, topIngameRect);
+        enemy.SetActive(true);
+
+        // 애니메이터 설정
+        Animator animator = enemy.GetComponent<Animator>();
+        if (animator != null && enemyAnimators[enemyType] != null)
+        {
+            animator.runtimeAnimatorController = enemyAnimators[enemyType];
+        }
+
+        RectTransform enemyRect = enemy.GetComponent<RectTransform>();
+        if (enemyRect != null)
+        {
+            enemyRect.anchoredPosition = spawnPosition;
+        }
+
+        var health = enemy.GetComponent<EnemyHealth>();
+        if (health != null)
+        {
+            float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
+            health.SetMaxHealth(baseHealth * healthMultiplier);
+        }
+
+        var moveController = enemy.GetComponent<EnemyMoveController>();
+        if (moveController != null)
+        {
+            float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
+            float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
+            float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
+            float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
+            float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
+
+            // 원거리 적 설정
+            moveController.SetRangedEnemy(enemyType == 1);
+
+            moveController.SetStats(
+                baseAttackDamage * attackMultiplier,
+                baseAttackSpeed * attackSpeedMultiplier,
+                movementSpeed,
+                attackRange,
+                gold
+            );
+        }
+
+        if (health != null && WaveManager.Instance != null)
+        {
+            WaveManager.Instance.RegisterEnemy(health);
         }
     }
+    catch (Exception e)
+    {
+        Debug.LogError($"Error spawning enemy: {e.Message}\n{e.StackTrace}");
+    }
+}
 
     private void OnDrawGizmos()
     {

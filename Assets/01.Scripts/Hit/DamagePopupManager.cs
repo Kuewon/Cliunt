@@ -5,7 +5,7 @@ public class DamagePopupManager : MonoBehaviour
     [SerializeField] private DamagePopup popupPrefab;
     private Transform canvasTransform;
 
-    private void Awake()  // Start 대신 Awake 사용
+    private void Awake()
     {
         GameObject canvas = GameObject.FindWithTag("TopIngame");
         if (canvas != null)
@@ -18,7 +18,13 @@ public class DamagePopupManager : MonoBehaviour
         }
     }
 
-    public void ShowDamage(Vector3 worldPosition, float amount, bool isCritical = false)  // Vector2 대신 Vector3 사용
+    public void ShowDamage(Vector3 worldPosition, float amount, bool isCritical = false)
+    {
+        // 기본적으로 Enemy 타입으로 처리 (이전 버전과의 호환성 유지)
+        ShowDamage(worldPosition, amount, isCritical, DamagePopup.EntityType.Player);
+    }
+
+    public void ShowDamage(Vector3 worldPosition, float amount, bool isCritical, DamagePopup.EntityType entityType)
     {
         if (canvasTransform == null || popupPrefab == null) 
         {
@@ -27,6 +33,6 @@ public class DamagePopupManager : MonoBehaviour
         }
 
         DamagePopup popup = Instantiate(popupPrefab, canvasTransform);
-        popup.Setup(worldPosition, amount, isCritical);
+        popup.Setup(worldPosition, amount, isCritical, entityType);
     }
 }

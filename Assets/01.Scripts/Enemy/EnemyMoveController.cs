@@ -3,6 +3,10 @@ using UnityEngine.UI;
 
 public class EnemyMoveController : MonoBehaviour
 {
+    [Header("Enemy Type")]
+    private bool isRangedEnemy = false;  // 원거리 적 여부
+    public void SetRangedEnemy(bool isRanged) => isRangedEnemy = isRanged;
+    
     private float moveSpeed = 150f;
     private float attackRange = 1f;
     private float attackInterval = 1f;
@@ -25,6 +29,11 @@ public class EnemyMoveController : MonoBehaviour
     // 애니메이션 파라미터 상수
     private readonly string PARAM_ATTACK = "Attack";  // 트리거
     private readonly string PARAM_IS_WALKING = "IsWalking"; // bool
+    
+    private RangedHitEffectsManager hitEffectsManager;
+    
+    private BoxCollider2D myCollider;
+    private BoxCollider2D playerCollider;
 
     private void Awake()
     {
@@ -32,6 +41,7 @@ public class EnemyMoveController : MonoBehaviour
         image = GetComponent<Image>();
         myRectTransform = GetComponent<RectTransform>();
         enemyHealth = GetComponent<EnemyHealth>();
+        myCollider = GetComponent<BoxCollider2D>();
     }
 
     private void Start()
@@ -45,6 +55,7 @@ public class EnemyMoveController : MonoBehaviour
         if (player != null)
         {
             playerRectTransform = player.GetComponent<RectTransform>();
+            playerCollider = player.GetComponent<BoxCollider2D>();
         }
 
         initialPosition = myRectTransform.anchoredPosition;
@@ -75,6 +86,15 @@ public class EnemyMoveController : MonoBehaviour
         if (WaveMovementController.Instance != null)
         {
             WaveMovementController.Instance.RegisterEnemy(this);
+        }
+        
+        if (isRangedEnemy)
+        {
+            hitEffectsManager = FindObjectOfType<RangedHitEffectsManager>();
+            if (hitEffectsManager == null)
+            {
+                Debug.LogWarning("RangedHitEffectsManager를 찾을 수 없습니다!");
+            }
         }
     }
 
@@ -215,6 +235,12 @@ public class EnemyMoveController : MonoBehaviour
         if (playerHealth != null)
         {
             playerHealth.TakeDamage(attackDamage);
+
+            // 원거리 적일 경우 타격 이펙트 생성
+            if (isRangedEnemy && hitEffectsManager != null)
+            {
+                hitEffectsManager.SpawnHitEffect();
+            }
         }
 
         canAttack = false;
@@ -236,11 +262,14 @@ public class EnemyMoveController : MonoBehaviour
 
     private bool IsInAttackRange()
     {
-        if (isDestroyed || playerRectTransform == null) return false;
+        if (isDestroyed || playerCollider == null || myCollider == null) return false;
 
-        Vector2 enemyPos = myRectTransform.position;
-        Vector2 playerPos = playerRectTransform.position;
-        float distance = Vector2.Distance(enemyPos, playerPos);
+        // 콜라이더의 중심점 위치 계산
+        Vector2 enemyCenter = myCollider.bounds.center;
+        Vector2 playerCenter = playerCollider.bounds.center;
+        
+        // 두 콜라이더 중심점 사이의 거리 계산
+        float distance = Vector2.Distance(enemyCenter, playerCenter);
 
         return distance <= attackRange;
     }

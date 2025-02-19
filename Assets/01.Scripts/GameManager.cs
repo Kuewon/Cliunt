@@ -13,7 +13,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI goldText;
     [SerializeField] private TextMeshProUGUI diamondText;
     [SerializeField] private TextMeshProUGUI stageText;
-    public GameObject damageTextObj;
 
     [Header("Stage Transition")]
     [SerializeField] private GameObject transitionUI;

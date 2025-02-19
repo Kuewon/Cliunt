@@ -5,6 +5,10 @@ using System.Linq;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Position Settings")]
+    [SerializeField] private float spawnXOffsetPercentage = 0.2f;  // 화면 너비의 20% 위치
+    [SerializeField, Range(0f, 1f)] private float spawnYOffsetPercentage = 0.5f;  // 화면 높이의 Y% 위치
+    
     [Header("Components")]
     [SerializeField] private Animator gunAnimator;
     [SerializeField] private Animator bodyAnimator;
@@ -87,6 +91,26 @@ public class PlayerController : MonoBehaviour
             if (backgroundScroller == null)
             {
                 Debug.LogError("ParallaxBackgroundScroller를 찾을 수 없습니다!");
+            }
+        }
+        
+        if (rectTransform != null)
+        {
+            // TopIngame 캔버스의 RectTransform 찾기
+            var topIngameCanvas = GameObject.FindWithTag("TopIngame")?.GetComponent<RectTransform>();
+            if (topIngameCanvas != null)
+            {
+                float width = topIngameCanvas.rect.width;
+                float height = topIngameCanvas.rect.height;
+                
+                float xPosition = (width * spawnXOffsetPercentage) - (width / 2);
+                float yPosition = (height * spawnYOffsetPercentage) - (height / 2);
+                
+                rectTransform.anchoredPosition = new Vector2(xPosition, yPosition);
+            }
+            else
+            {
+                Debug.LogError("TopIngame 캔버스를 찾을 수 없습니다!");
             }
         }
     }
@@ -385,12 +409,18 @@ public class PlayerController : MonoBehaviour
 
     private bool IsEnemyInRange(GameObject enemy)
     {
-        RectTransform enemyRect = enemy.GetComponent<RectTransform>();
-        if (enemyRect == null) return false;
+        // 적의 BoxCollider2D 가져오기
+        BoxCollider2D enemyCollider = enemy.GetComponent<BoxCollider2D>();
+        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
+        
+        if (enemyCollider == null || playerCollider == null) return false;
 
-        Vector2 characterPos = rectTransform.position;
-        Vector2 enemyPos = enemyRect.position;
-        float distance = Vector2.Distance(characterPos, enemyPos);
+        // 콜라이더의 중심점 위치 계산
+        Vector2 enemyCenter = enemyCollider.bounds.center;
+        Vector2 playerCenter = playerCollider.bounds.center;
+        
+        // 두 콜라이더 중심점 사이의 거리 계산
+        float distance = Vector2.Distance(playerCenter, enemyCenter);
 
         return distance <= attackRange;
     }
