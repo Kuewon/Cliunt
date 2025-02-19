@@ -6,9 +6,14 @@ public class EnemySpawnController : MonoBehaviour
 {
     public static EnemySpawnController Instance { get; private set; }
 
+    [Header("Enemy Prefabs")]
+    [SerializeField] private GameObject[] enemyPrefabs; // 0: 근거리, 1: 원거리, 2: 보스
+    [SerializeField] private RuntimeAnimatorController[] enemyAnimators; // 각 적 타입별 애니메이터
+
     [Header("Spawn Settings")]
-    [SerializeField] private GameObject enemyPrefab; 
-    private float spawnXOffsetPercentage = 0.8f;
+    [SerializeField] private float spawnXOffsetPercentage = 0.2f;
+    [SerializeField, Range(0f, 1f)] private float spawnYOffsetPercentage = 0.5f;  // 화면 높이의 Y% 위치
+
 
     [Header("Debug")]
     [SerializeField] private bool showSpawnRange = true;
@@ -31,14 +36,12 @@ public class EnemySpawnController : MonoBehaviour
 
         ValidateComponents();
     }
+
     private void Start()
     {
         if (WaveManager.Instance != null)
         {
-            // 스테이지 전환 시작 시
             WaveManager.Instance.OnStageChanged += HandleStageChange;
-            
-            // 새로운 웨이브 시작 시 (스테이지 전환 완료 후)
             WaveManager.Instance.OnNewWaveStarted += (wave) => {
                 isStageTransitioning = false;
             };
@@ -47,12 +50,32 @@ public class EnemySpawnController : MonoBehaviour
 
     private void ValidateComponents()
     {
-        if (enemyPrefab == null)
+        if (enemyPrefabs == null || enemyPrefabs.Length != 3)
         {
-            Debug.LogError("Enemy Prefab이 할당되지 않았습니다!");
+            Debug.LogError("Enemy Prefabs가 올바르게 할당되지 않았습니다! (근거리, 원거리, 보스 3개 필요)");
+            return;
         }
 
-        // TopIngame 태그로 오브젝트 찾기
+        // 각 프리팹의 활성화 상태 확인
+        for (int i = 0; i < enemyPrefabs.Length; i++)
+        {
+            if (enemyPrefabs[i] == null)
+            {
+                Debug.LogError($"Enemy Prefab {i}가 할당되지 않았습니다!");
+                continue;
+            }
+
+            if (!enemyPrefabs[i].activeSelf)
+            {
+                Debug.LogWarning($"Enemy Prefab {i}가 비활성화되어 있습니다. 프리팹을 활성화해주세요!");
+            }
+        }
+
+        if (enemyAnimators == null || enemyAnimators.Length != 3)
+        {
+            Debug.LogError("Enemy Animators가 올바르게 할당되지 않았습니다! (근거리, 원거리, 보스 3개 필요)");
+        }
+
         GameObject topIngame = GameObject.FindWithTag("TopIngame");
         if (topIngame == null)
         {
@@ -67,7 +90,6 @@ public class EnemySpawnController : MonoBehaviour
             return;
         }
 
-        // 플레이어 찾기
         GameObject player = GameObject.FindWithTag("Player");
         if (player == null)
         {
@@ -96,121 +118,147 @@ public class EnemySpawnController : MonoBehaviour
         }
 
         float width = topIngameRect.rect.width;
-        float baseSpawnX;
-
-        if (isStageTransitioning)
-        {
-            // 스테이지 전환 중일 때는 현재 width의 80% 지점에서 스폰
-            baseSpawnX = width * 0.8f;
-        }
-        else
-        {
-            // 첫 스테이지나 일반 웨이브에서는 현재 스테이지 끝 + 80% 지점에서 스폰
-            baseSpawnX = width + (width * 0.8f);
-        }
-
-        // x축 랜덤 오프셋 추가 (기본 위치에서 ±100 범위)
-        float randomXOffset = UnityEngine.Random.Range(-100f, 100f);
-
-        // 화면 중앙 기준으로 보정
+        float height = topIngameRect.rect.height;
+        
+        float baseSpawnX = width * (1f + spawnXOffsetPercentage);
+        float randomXOffset = UnityEngine.Random.Range(-150f, 100f);
         float spawnX = (baseSpawnX + randomXOffset) - (width / 2);
-
-        // y축 랜덤 오프셋은 유지
-        float randomYOffset = UnityEngine.Random.Range(-50f, 50f);
-        float spawnY = playerRect.anchoredPosition.y + randomYOffset;
+        
+        float spawnY = (height * spawnYOffsetPercentage) - (height / 2);
 
         return new Vector2(spawnX, spawnY);
     }
-
 
     public void SpawnEnemyWithStats(
     Dictionary<string, object> enemyStats,
     float healthMultiplier,
     float attackMultiplier,
     float attackSpeedMultiplier)
+{
+    if (enemyPrefabs == null || topIngameRect == null)
     {
-        if (enemyPrefab == null || topIngameRect == null)
+        Debug.LogError("필요한 컴포넌트가 없습니다!");
+        return;
+    }
+
+    try
+    {
+        // enemyStats에서 enemyType 가져오기 (0: 근거리, 1: 원거리, 2: 보스)
+        int enemyType;
+        if (!enemyStats.ContainsKey("enemyType"))
         {
-            Debug.LogError("필요한 컴포넌트가 없습니다!");
+            Debug.LogError("enemyStats에 enemyType이 없습니다!");
             return;
         }
 
-        try
+        // enemyType이 int나 float 형태로 들어올 수 있으므로 안전하게 변환
+        if (enemyStats["enemyType"] is int intType)
         {
-            Vector2 spawnPosition = GetSpawnPosition();
-            
-            float randomYOffset = UnityEngine.Random.Range(-50f, 50f);
-            spawnPosition.y += randomYOffset;
+            enemyType = intType;
+        }
+        else if (enemyStats["enemyType"] is float floatType)
+        {
+            enemyType = (int)floatType;
+        }
+        else if (enemyStats["enemyType"] is double doubleType)
+        {
+            enemyType = (int)doubleType;
+        }
+        else
+        {
+            Debug.LogError($"유효하지 않은 enemyType 형식: {enemyStats["enemyType"]?.GetType()}");
+            return;
+        }
 
-            GameObject enemy = Instantiate(enemyPrefab, Vector3.zero, Quaternion.identity, topIngameRect);
-            
-            RectTransform enemyRect = enemy.GetComponent<RectTransform>();
-            if (enemyRect != null)
+        if (enemyType < 0 || enemyType >= enemyPrefabs.Length)
+        {
+            Debug.LogError($"유효하지 않은 enemy type: {enemyType}");
+            return;
+        }
+
+        Vector2 spawnPosition = GetSpawnPosition();
+        
+        // 해당 타입의 프리팹으로 적 생성
+        GameObject enemy = Instantiate(enemyPrefabs[enemyType], Vector3.zero, Quaternion.identity, topIngameRect);
+        enemy.SetActive(true);
+
+        // 애니메이터 설정
+        Animator animator = enemy.GetComponent<Animator>();
+        if (animator != null && enemyAnimators[enemyType] != null)
+        {
+            animator.runtimeAnimatorController = enemyAnimators[enemyType];
+        }
+
+        RectTransform enemyRect = enemy.GetComponent<RectTransform>();
+        if (enemyRect != null)
+        {
+            enemyRect.anchoredPosition = spawnPosition;
+        }
+
+        var health = enemy.GetComponent<EnemyHealth>();
+        if (health != null)
+        {
+            float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
+            health.SetMaxHealth(baseHealth * healthMultiplier);
+        }
+
+        var moveController = enemy.GetComponent<EnemyMoveController>();
+        if (moveController != null)
+        {
+            float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
+            float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
+            float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
+            float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
+            float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
+
+            // 원거리 적 설정
+            moveController.SetRangedEnemy(enemyType == 1);
+
+            moveController.SetStats(
+                baseAttackDamage * attackMultiplier,
+                baseAttackSpeed * attackSpeedMultiplier,
+                movementSpeed,
+                attackRange,
+                gold
+            );
+
+            // WaveMovementController에 등록 추가
+            if (WaveMovementController.Instance != null)
             {
-                enemyRect.anchoredPosition = spawnPosition;
-                // 스폰될 때 왼쪽을 보도록 설정
-                Vector3 scale = enemyRect.localScale;
-                scale.x = -Mathf.Abs(scale.x);  // x 스케일을 음수로 만들어 왼쪽을 보도록
-                enemyRect.localScale = scale;
-            }
-
-            var health = enemy.GetComponent<EnemyHealth>();
-            if (health != null)
-            {
-                float baseHealth = Convert.ToSingle(enemyStats["baseHealth"]);
-                health.SetMaxHealth(baseHealth * healthMultiplier);
-            }
-
-            var moveController = enemy.GetComponent<EnemyMoveController>();
-            if (moveController != null)
-            {
-                float baseAttackDamage = Convert.ToSingle(enemyStats["baseAttackDamage"]);
-                float baseAttackSpeed = Convert.ToSingle(enemyStats["baseAttackSpeed"]);
-                float movementSpeed = Convert.ToSingle(enemyStats["movementSpeed"]);
-                float attackRange = Convert.ToSingle(enemyStats["attackRange"]);
-                float gold = Convert.ToSingle(enemyStats["enemyDropGold"]);
-
-                moveController.SetStats(
-                    baseAttackDamage * attackMultiplier,
-                    baseAttackSpeed * attackSpeedMultiplier,
-                    movementSpeed,
-                    attackRange,
-                    gold
-                );
-            }
-
-            if (health != null && WaveManager.Instance != null)
-            {
-                WaveManager.Instance.RegisterEnemy(health);
+                WaveMovementController.Instance.RegisterEnemy(moveController);
             }
         }
-        catch (Exception e)
+
+        if (health != null && WaveManager.Instance != null)
         {
-            Debug.LogError($"Error spawning enemy: {e.Message}\n{e.StackTrace}");
+            WaveManager.Instance.RegisterEnemy(health);
         }
     }
+    catch (Exception e)
+    {
+        Debug.LogError($"Error spawning enemy: {e.Message}\n{e.StackTrace}");
+    }
+}
 
     private void OnDrawGizmos()
     {
         if (!showSpawnRange || topIngameRect == null || playerRect == null) return;
 
-        // 월드 스페이스 위치로 변환
         Vector3 spawnPos = topIngameRect.TransformPoint(
-            new Vector3(topIngameRect.sizeDelta.x * spawnXOffsetPercentage, 
-                playerRect.anchoredPosition.y, 
+            new Vector3(topIngameRect.sizeDelta.x * spawnXOffsetPercentage,
+                playerRect.anchoredPosition.y,
                 0)
         );
-    
+
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(spawnPos, 20f);
     }
-    
+
     private void HandleStageChange(int newStage)
     {
-        // 첫 스테이지(stage 1)가 아닐 때만 전환 모드 활성화
         isStageTransitioning = newStage > 1;
     }
-    
+
     private void OnDestroy()
     {
         if (WaveManager.Instance != null)

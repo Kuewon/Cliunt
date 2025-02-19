@@ -3,6 +3,16 @@ using UnityEngine;
 
 public class DamagePopup : MonoBehaviour
 {
+    public enum EntityType
+    {
+        Player,
+        Enemy
+    }
+
+    [Header("Position Settings")]
+    [SerializeField] private float playerXOffset = -7f;
+    [SerializeField] private float enemyXOffset = 100f;
+    
     [Header("Text Settings")]
     [SerializeField] private TMP_FontAsset fontAsset;
     [SerializeField] private int fontSize = 40;
@@ -70,7 +80,7 @@ public class DamagePopup : MonoBehaviour
         }
     }
 
-    public void Setup(Vector3 worldPosition, float damageAmount, bool isCritical = false)
+    public void Setup(Vector3 worldPosition, float damageAmount, bool isCritical = false, EntityType entityType = EntityType.Enemy)
     {
         this.isCritical = isCritical;
 
@@ -85,7 +95,9 @@ public class DamagePopup : MonoBehaviour
                 canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : Camera.main,
                 out Vector2 localPoint))
         {
-            localPoint.y -= 350f;
+            // 엔티티 타입에 따라 X 오프셋 적용
+            localPoint.x += (entityType == EntityType.Player) ? playerXOffset : enemyXOffset;
+            localPoint.y -= 350f;  // Y 오프셋은 그대로 유지
             rectTransform.anchoredPosition = localPoint;
         }
 

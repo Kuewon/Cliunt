@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System;
 
 public class WaveMovementController : MonoBehaviour
 {
@@ -8,6 +7,7 @@ public class WaveMovementController : MonoBehaviour
     
     private HashSet<EnemyMoveController> currentWaveEnemies = new HashSet<EnemyMoveController>();
     private bool isWaveMovementEnabled = false;
+    private RectTransform topIngameRect;
 
     private void Awake()
     {
@@ -19,21 +19,56 @@ public class WaveMovementController : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        // TopIngame 찾기
+        GameObject topIngame = GameObject.FindWithTag("TopIngame");
+        if (topIngame != null)
+        {
+            topIngameRect = topIngame.GetComponent<RectTransform>();
+        }
     }
 
     private void Start()
     {
-        if (BackgroundScroller.Instance != null)
+        if (ParallaxBackgroundScroller.Instance != null)
         {
-            BackgroundScroller.Instance.OnScrollComplete += EnableWaveMovement;
+            ParallaxBackgroundScroller.Instance.OnScrollComplete += HandleScrollComplete;
+            ParallaxBackgroundScroller.Instance.OnScrollUpdate += UpdateEnemyPositions;
         }
+    }
+
+    private void UpdateEnemyPositions(float scrollProgress)
+    {
+        if (topIngameRect == null) return;
+
+        float totalMovement = topIngameRect.rect.width;
+
+        foreach (var enemy in currentWaveEnemies)
+        {
+            if (enemy != null && enemy.gameObject.activeInHierarchy)
+            {
+                var rectTransform = enemy.GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    Vector2 startPos = enemy.InitialPosition;
+                    Vector2 targetPos = startPos - new Vector2(totalMovement, 0);
+                    rectTransform.anchoredPosition = Vector2.Lerp(startPos, targetPos, scrollProgress);
+                }
+            }
+        }
+    }
+
+    private void HandleScrollComplete()
+    {
+        EnableWaveMovement();
     }
 
     private void OnDestroy()
     {
-        if (BackgroundScroller.Instance != null)
+        if (ParallaxBackgroundScroller.Instance != null)
         {
-            BackgroundScroller.Instance.OnScrollComplete -= EnableWaveMovement;
+            ParallaxBackgroundScroller.Instance.OnScrollComplete -= HandleScrollComplete;
+            ParallaxBackgroundScroller.Instance.OnScrollUpdate -= UpdateEnemyPositions;
         }
     }
 
@@ -42,16 +77,21 @@ public class WaveMovementController : MonoBehaviour
         if (enemy != null)
         {
             currentWaveEnemies.Add(enemy);
+            
+            // 초기 위치 저장
+            var rectTransform = enemy.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                enemy.InitialPosition = rectTransform.anchoredPosition;
+            }
+            
             enemy.SetMovementEnabled(isWaveMovementEnabled);
         }
     }
 
     public void UnregisterEnemy(EnemyMoveController enemy)
     {
-        if (enemy != null)
-        {
-            currentWaveEnemies.Remove(enemy);
-        }
+        currentWaveEnemies.Remove(enemy);
     }
 
     private void EnableWaveMovement()
@@ -59,7 +99,7 @@ public class WaveMovementController : MonoBehaviour
         isWaveMovementEnabled = true;
         foreach (var enemy in currentWaveEnemies)
         {
-            if (enemy != null)
+            if (enemy != null && enemy.gameObject.activeInHierarchy)
             {
                 enemy.SetMovementEnabled(true);
             }

@@ -23,6 +23,7 @@ public class WaveManager : MonoBehaviour
     private HashSet<EnemyHealth> activeEnemies = new HashSet<EnemyHealth>();
     private bool isWaveInProgress = false;
     private bool isStageTransitioning = false;
+    private bool skipStageTransition = false;
     public bool IsStageTransitioning => isStageTransitioning;
 
     [SerializeField] private float _enemyDropGoldMultiplier = 1.0f;
@@ -47,7 +48,10 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
-        StartStage(currentStage);
+        skipStageTransition = true;
+        LoadWaveData();
+        currentWaveIndex = -1;
+        StartNextWave();
     }
 
     public void StartStage(int stageNumber)
@@ -57,18 +61,12 @@ public class WaveManager : MonoBehaviour
             Debug.Log("스테이지 전환 중에는 새로운 스테이지를 시작할 수 없습니다.");
             return;
         }
-        
-        // 게임 시작 시에만 OnStageChanged 호출
-        if (stageNumber == 1)
-        {
-            OnStageChanged?.Invoke(stageNumber);
-        }
-        
+
         currentStage = stageNumber;
         currentWaveIndex = -1;
         waveEnemyIndices.Clear();
         isWaveInProgress = false;
-    
+
         foreach (var enemy in activeEnemies)
         {
             if (enemy != null)
@@ -79,13 +77,14 @@ public class WaveManager : MonoBehaviour
         activeEnemies.Clear();
 
         LoadWaveData();
-    
+
         if (waveEnemyIndices.Count == 0)
         {
             Debug.LogError($"Stage {stageNumber}의 웨이브 데이터가 비어있습니다!");
             return;
         }
-        
+
+        OnStageChanged?.Invoke(stageNumber);
         StartNextWave();
     }
 
@@ -186,14 +185,11 @@ public class WaveManager : MonoBehaviour
     private void RemoveEnemy(EnemyHealth enemy)
     {
         activeEnemies.Remove(enemy);
-    
-        // 웨이브의 적이 모두 처치되었는지 확인
+
         if (activeEnemies.Count == 0)
         {
             isWaveInProgress = false;
-            OnWaveCompleted?.Invoke();
 
-            // 전환 중이 아닐 때만 다음 웨이브/스테이지 처리
             if (!isStageTransitioning)
             {
                 if (HasNextWave())
@@ -205,64 +201,96 @@ public class WaveManager : MonoBehaviour
                     StartCoroutine(StartNextStageWithDelay());
                 }
             }
+            // OnWaveCompleted 이벤트를 여기서 제거
         }
     }
 
     private IEnumerator StartNextWaveWithDelay()
     {
         yield return new WaitForSeconds(nextWaveDelay);
-        StartNextWave();
+        
+        OnWaveCompleted?.Invoke();  // 웨이브 완료 이벤트 발생
+
+        // 다음 웨이브의 적을 먼저 스폰
+        if (HasNextWave())
+        {
+            currentWaveIndex++;
+            SpawnWaveEnemy();
+        }
+
+        // 배경 스크롤 시작 및 완료 대기
+        if (ParallaxBackgroundScroller.Instance != null)
+        {
+            ParallaxBackgroundScroller.Instance.StartScroll();
+            while (ParallaxBackgroundScroller.Instance.IsScrolling)
+            {
+                yield return null;
+            }
+        }
+
+        // 스크롤 완료 후 OnNewWaveStarted 이벤트 발생
+        OnNewWaveStarted?.Invoke(currentWaveIndex + 1);
+        isWaveInProgress = true;
     }
+
 
     private IEnumerator StartNextStageWithDelay()
     {
         if (isStageTransitioning)
         {
-            Debug.Log("이미 스테이지 전환 중입니다.");
             yield break;
         }
 
         isStageTransitioning = true;
-        
-        yield return new WaitForSeconds(nextStageDelay);
 
         if (currentStage < maxStage)
         {
+            yield return new WaitForSeconds(nextStageDelay);
+
             currentStage++;
-            
-            // 스테이지 변경 이벤트 발생
-            OnStageChanged?.Invoke(currentStage);
-            
-            // 웨이브 데이터 로드
+            skipStageTransition = false;
             LoadWaveData();
-            
-            // 배경 스크롤 시작
+
+            // OnWaveCompleted 호출
             OnWaveCompleted?.Invoke();
+
+            // 다음 스테이지의 첫 웨이브 적을 먼저 스폰
+            currentWaveIndex = 0;
+            SpawnWaveEnemy();
             
-            while (BackgroundScroller.Instance != null && BackgroundScroller.Instance.IsScrolling)
+            // 스크롤 시작
+            if (ParallaxBackgroundScroller.Instance != null)
             {
-                yield return null;
+                ParallaxBackgroundScroller.Instance.StartScroll();
+                
+                // 스크롤이 완료될 때까지 대기
+                while (ParallaxBackgroundScroller.Instance.IsScrolling)
+                {
+                    yield return null;
+                }
             }
-            
-            // 다음 웨이브 시작 전에 잠시 대기
-            yield return new WaitForSeconds(0.5f);
-            
-            // 새로운 웨이브 시작 준비
-            currentWaveIndex = -1;
-            isWaveInProgress = false;
-            
-            // 전환 완료
+
+            // 스크롤 완료 후 이벤트 발생
+            OnStageChanged?.Invoke(currentStage);
+            OnNewWaveStarted?.Invoke(1);
+            isWaveInProgress = true;
             isStageTransitioning = false;
-            
-            // 다음 웨이브 시작
-            StartNextWave();
         }
         else
         {
             isStageTransitioning = false;
-            Debug.Log("모든 스테이지를 완료했습니다!");
             OnAllStagesCompleted?.Invoke();
         }
+    }
+
+    public bool ShouldPlayStageTransition()
+    {
+        if (skipStageTransition)
+        {
+            skipStageTransition = false;
+            return false;
+        }
+        return true;
     }
 
     // 상태 확인용 메서드들
