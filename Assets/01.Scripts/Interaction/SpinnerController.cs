@@ -4,59 +4,69 @@ using UnityEngine.UI;
 
 public class SpinnerController : MonoBehaviour
 {
-    private RectTransform rectTransform; // 스피너의 RectTransform 컴포넌트
-    private float currentSpinSpeed; // 현재 회전 속도
-    public bool isDragging; // 사용자가 드래그 중인지 여부
-    private Vector2 lastMousePosition; // 마지막 마우스 위치
-    private float previousForce = 0f; // 이전에 적용된 힘
-    private float dragStartTime; // 드래그 시작 시간
-    private float totalRotation = 0f; // 총 회전량
-    private int rotationCount = 0; // 총 회전 횟수
+    private RectTransform rectTransform;
+    private float currentSpinSpeed;
+    public bool isDragging;
+    private Vector2 lastMousePosition;
+    private float previousForce = 0f;
+    private float dragStartTime;
+    private float totalRotation = 0f;
+    private int rotationCount = 0;
 
-    private float lastClickTime = 0f; // 마지막 클릭 시간
-    private float clickCooldown = 0.2f; // 클릭 간격 제한 (쿨다운)
+    private float lastClickTime = 0f;
+    private float clickCooldown = 0.2f;
 
     [Header("⚡ 회전 속도 설정")]
-    private float maxSpeed = 2000f; // 최대 회전 속도
-    [SerializeField] private float accelerationMultiplier = 2.0f; // 가속 계수
+    private float maxSpeed = 2000f;
+    [SerializeField] private float accelerationMultiplier = 2.0f;
 
     [Header("🎯 힘 조절 설정")]
-    [SerializeField] private float minForce = 10f; // 최소 힘
-    [SerializeField] private float maxForce = 2000f; // 최대 힘
-    [SerializeField] private float maxAcceleration = 600f; // 최대 가속도
-    [SerializeField] private float powerCurve = 2.0f; // 힘 증가 곡선 조절값
+    [SerializeField] private float minForce = 10f;
+    [SerializeField] private float maxForce = 2000f;
+    [SerializeField] private float maxAcceleration = 600f;
+    [SerializeField] private float powerCurve = 2.0f;
 
     [Header("📏 해상도 조정")]
-    [SerializeField] private float baseScreenWidth = 1080f; // 기준 화면 너비
-    [SerializeField] private float baseScreenHeight = 1920f; // 기준 화면 높이
+    [SerializeField] private float baseScreenWidth = 1080f;
+    [SerializeField] private float baseScreenHeight = 1920f;
 
     [Header("🛑 감속 설정")]
-    [SerializeField] private float dampingRate = 0.99f; // 감속 비율
-    [SerializeField] private float fixedDeceleration = 15f; // 고정 감속량
-    [SerializeField] private float spinStopThreshold = 10f; // 회전 멈춤 기준 속도
-    [SerializeField] private float quickStopFactor = 2f; // 빠른 정지 계수
+    [SerializeField] private float dampingRate = 0.99f;
+    [SerializeField] private float fixedDeceleration = 15f;
+    [SerializeField] private float spinStopThreshold = 10f;
+    [SerializeField] private float quickStopFactor = 2f;
 
     [Header("⏳ 조작 시간 설정")]
-    [SerializeField] private float shortDragThreshold = 0.2f; // 짧은 드래그 판정 시간
-    [SerializeField] private float shortDragBoost = 1.05f; // 짧은 드래그 시 속도 증가율
+    [SerializeField] private float shortDragThreshold = 0.2f;
+    [SerializeField] private float shortDragBoost = 1.05f;
 
     [Header("📊 UI 속도 및 회전 수 표시")]
-    public TextMeshProUGUI speedText; // 속도 표시 UI
-    public TextMeshProUGUI rotationText; // 회전 횟수 표시 UI
+    public TextMeshProUGUI speedText;
+    public TextMeshProUGUI rotationText;
 
     [Header("🎯 총알 이미지 설정")]
     private Image[] bullettImages;
-    private int[] bullettStates = new int[] { 19, 0, 0, 8, -1, -1 }; // 하드코딩된 초기값
+    private int[] bullettStates;
+    private EquipmentManager equipmentManager;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
         InitializeBullettImages();
+        
+        equipmentManager = FindObjectOfType<EquipmentManager>();
+        if (equipmentManager == null)
+        {
+            Debug.LogWarning("⚠️ EquipmentManager를 찾을 수 없습니다!");
+        }
+
+        bullettStates = new int[6] { -1, -1, -1, -1, -1, -1 };
     }
 
     private void Start()
     {
         UpdateMaxSpeedFromEquippedCylinder();
+        UpdateBullettFromEquipment();
         UpdateBullettVisibility();
     }
 
@@ -75,7 +85,26 @@ public class SpinnerController : MonoBehaviour
             if (bullettTransform != null)
             {
                 bullettImages[i] = bullettTransform.GetComponent<Image>();
+                Debug.Log($"🎯 Bullett_{i} 이미지 컴포넌트 찾음");
             }
+            else
+            {
+                Debug.LogWarning($"⚠️ Bullett_{i}를 찾을 수 없습니다!");
+            }
+        }
+    }
+
+    private void UpdateBullettFromEquipment()
+    {
+        if (equipmentManager != null)
+        {
+            int equippedBulletIndex = equipmentManager.GetEquippedBulletIndex();
+            bullettStates[0] = equippedBulletIndex;
+            for (int i = 1; i < bullettStates.Length; i++)
+            {
+                bullettStates[i] = -1;
+            }
+            Debug.Log($"🎯 장착된 총알 업데이트: {equippedBulletIndex}");
         }
     }
 
@@ -86,6 +115,7 @@ public class SpinnerController : MonoBehaviour
             if (bullettImages[i] != null)
             {
                 bullettImages[i].enabled = (bullettStates[i] != -1);
+                Debug.Log($"🎯 Bullett_{i} 상태: {(bullettImages[i].enabled ? "켜짐" : "꺼짐")}");
             }
         }
     }
@@ -103,10 +133,16 @@ public class SpinnerController : MonoBehaviour
     {
         if (index < 0 || index >= bullettStates.Length)
         {
-            Debug.LogWarning($"Invalid bullett index: {index}");
+            Debug.LogWarning($"⚠️ 잘못된 총알 인덱스: {index}");
             return false;
         }
         return bullettStates[index] != -1;
+    }
+
+    public void OnBulletEquipped()
+    {
+        UpdateBullettFromEquipment();
+        UpdateBullettVisibility();
     }
 
     private void UpdateMaxSpeedFromEquippedCylinder()
