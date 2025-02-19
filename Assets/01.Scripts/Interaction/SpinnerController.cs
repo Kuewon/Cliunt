@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class SpinnerController : MonoBehaviour
 {
@@ -43,23 +44,71 @@ public class SpinnerController : MonoBehaviour
     public TextMeshProUGUI speedText; // 속도 표시 UI
     public TextMeshProUGUI rotationText; // 회전 횟수 표시 UI
 
+    [Header("🎯 총알 이미지 설정")]
+    private Image[] bullettImages;
+    private int[] bullettStates = new int[] { 19, 0, 0, 8, -1, -1 }; // 하드코딩된 초기값
+
     private void Awake()
     {
-        rectTransform = GetComponent<RectTransform>(); // RectTransform 컴포넌트 가져오기
+        rectTransform = GetComponent<RectTransform>();
+        InitializeBullettImages();
     }
 
     private void Start()
     {
-        UpdateMaxSpeedFromEquippedCylinder(); // 실린더 장착 상태에 따라 최대 속도 업데이트
+        UpdateMaxSpeedFromEquippedCylinder();
+        UpdateBullettVisibility();
     }
 
     private void Update()
     {
-        ApplyRotation(); // 회전 적용
-        UpdateUI(); // UI 업데이트
+        ApplyRotation();
+        UpdateUI();
     }
 
-    // 실린더의 최대 속도를 가져와 업데이트하는 메서드
+    private void InitializeBullettImages()
+    {
+        bullettImages = new Image[6];
+        for (int i = 0; i < 6; i++)
+        {
+            Transform bullettTransform = transform.Find($"Bullett_{i}");
+            if (bullettTransform != null)
+            {
+                bullettImages[i] = bullettTransform.GetComponent<Image>();
+            }
+        }
+    }
+
+    private void UpdateBullettVisibility()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (bullettImages[i] != null)
+            {
+                bullettImages[i].enabled = (bullettStates[i] != -1);
+            }
+        }
+    }
+
+    public void UpdateBullettStates(int[] newStates)
+    {
+        if (newStates != null && newStates.Length == 6)
+        {
+            bullettStates = newStates;
+            UpdateBullettVisibility();
+        }
+    }
+
+    public bool IsBullettActive(int index)
+    {
+        if (index < 0 || index >= bullettStates.Length)
+        {
+            Debug.LogWarning($"Invalid bullett index: {index}");
+            return false;
+        }
+        return bullettStates[index] != -1;
+    }
+
     private void UpdateMaxSpeedFromEquippedCylinder()
     {
         string sheetName = "Cylinder";
@@ -67,7 +116,7 @@ public class SpinnerController : MonoBehaviour
 
         if (!GameData.Instance.HasRow(sheetName, equippedIndex))
         {
-            Debug.LogWarning($"⚠️ `{sheetName}` 시트에 인덱스 {equippedIndex}가 존재하지 않습니다.");
+            Debug.LogWarning($"⚠️ {sheetName} 시트에 인덱스 {equippedIndex}가 존재하지 않습니다.");
             return;
         }
 
@@ -75,7 +124,6 @@ public class SpinnerController : MonoBehaviour
         Debug.Log($"🔄 실린더의 최대 회전 속도가 {maxSpeed}으로 업데이트되었습니다.");
     }
 
-    // 실린더 장착 시 호출되는 메서드
     public void OnCylinderEquipped()
     {
         UpdateMaxSpeedFromEquippedCylinder();
