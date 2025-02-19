@@ -220,7 +220,7 @@ public class UserDataManager : MonoBehaviour
         if (loadingUI != null) loadingUI.SetActive(true);
         if (lobbyUI != null) lobbyUI.SetActive(false);
 
-        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Ingame").completed += (op) =>
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("GameScene").completed += (op) =>
         {
             if (loadingUI != null) loadingUI.SetActive(false);
         };
