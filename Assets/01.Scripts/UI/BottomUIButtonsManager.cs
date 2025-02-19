@@ -53,9 +53,10 @@ public class BottomUIButtonsManager : MonoBehaviour
     private Dictionary<Button, TMP_Text> buttonToTextMap = new Dictionary<Button, TMP_Text>();
     private bool isAnimationPlaying = false;
     private int currentTabIndex = 0;
-    
-    [Header("Tab Info Box Settings")]
-    [SerializeField] private Transform[] tabInfoBoxParents;  // 각 탭별 InfoBox 부모 오브젝트
+
+    [Header("Tab Info Box Settings")] [SerializeField]
+    private Transform[] tabInfoBoxParents; // 각 탭별 InfoBox 부모 오브젝트
+
     [SerializeField] private float infoBoxRotateAmount = 15f;
     [SerializeField] private float infoBoxRotateDuration = 0.4f;
     [SerializeField] private float infoBoxReturnDelay = 0.1f;
@@ -133,6 +134,12 @@ public class BottomUIButtonsManager : MonoBehaviour
         if (isAnimationPlaying || targetIndex == currentTabIndex) return;
         isAnimationPlaying = true;
 
+        // ✅ 탭 전환 시 다른 사운드 실행
+        if (UISoundManager.Instance != null)
+        {
+            UISoundManager.Instance.PlayTabSwitchSound();
+        }
+
         tabSequence.UpdateSequence(targetIndex);
         UpdateTabButtonStates(targetIndex);
 
@@ -147,7 +154,8 @@ public class BottomUIButtonsManager : MonoBehaviour
         Sequence infoBoxSequence = AnimateTabInfoBoxes(currentTabIndex, targetIndex);
 
         targetTab.SetActive(true);
-        targetTransform.anchoredPosition = new Vector2(direction * tabSlideDistance, targetTransform.anchoredPosition.y);
+        targetTransform.anchoredPosition =
+            new Vector2(direction * tabSlideDistance, targetTransform.anchoredPosition.y);
 
         if (weaponUpgradePanel.activeSelf)
         {
@@ -159,7 +167,8 @@ public class BottomUIButtonsManager : MonoBehaviour
 
         // 메인 탭 전환 애니메이션
         Sequence mainSequence = DOTween.Sequence()
-            .Append(currentTransform.DOAnchorPosX(-direction * tabSlideDistance, tabAnimationDuration).SetEase(Ease.OutQuad))
+            .Append(currentTransform.DOAnchorPosX(-direction * tabSlideDistance, tabAnimationDuration)
+                .SetEase(Ease.OutQuad))
             .Join(targetTransform.DOAnchorPosX(0, tabAnimationDuration).SetEase(Ease.OutQuad));
 
         // 두 애니메이션 시퀀스를 하나로 합치기
@@ -178,15 +187,27 @@ public class BottomUIButtonsManager : MonoBehaviour
     {
         if (!bottomButtons.Contains(clickedButton)) return;
 
-        if (currentActiveButton == clickedButton)
+        if (currentActiveButton == clickedButton) // 같은 버튼을 다시 클릭하면 UI 닫힘
         {
+            if (UISoundManager.Instance != null)
+            {
+                UISoundManager.Instance.PlayCloseSound();
+            }
+
             ResetButton(clickedButton);
             ResetAllPanels();
             return;
         }
 
+        // UI가 열릴 때 클릭 사운드 실행
+        if (UISoundManager.Instance != null)
+        {
+            UISoundManager.Instance.PlayClickSound();
+        }
+
         ResetAllPanels();
         ActivateButton(clickedButton);
+
 
         if (clickedButton == bottomButtons[0]) ShowUpgradePanel();
         else if (clickedButton == bottomButtons[1]) PlayWeaponAnimation();
@@ -376,11 +397,11 @@ public class BottomUIButtonsManager : MonoBehaviour
             tabButtons[i].transform.DOScale(isActive ? 1.2f : 1.0f, 0.2f).SetEase(Ease.OutBack);
         }
     }
-    
+
     private Sequence AnimateTabInfoBoxes(int fromIndex, int toIndex)
     {
         Sequence masterSequence = DOTween.Sequence();
-    
+
         if (tabInfoBoxParents == null) return masterSequence;
 
         float direction = Mathf.Sign(toIndex - fromIndex);
@@ -405,25 +426,25 @@ public class BottomUIButtonsManager : MonoBehaviour
 
         return masterSequence;
     }
-    
+
     private Sequence AnimateInfoBox(Transform infoBox, float direction)
     {
         float targetRotation = -direction * infoBoxRotateAmount;
-    
+
         Sequence infoBoxSequence = DOTween.Sequence();
-    
+
         infoBoxSequence.Append(
             infoBox.DOLocalRotate(
-                    new Vector3(0, 0, targetRotation), 
+                    new Vector3(0, 0, targetRotation),
                     infoBoxRotateDuration * 0.5f)
                 .SetEase(Ease.OutQuad)
         );
-    
+
         infoBoxSequence.AppendInterval(infoBoxReturnDelay);
-    
+
         infoBoxSequence.Append(
             infoBox.DOLocalRotate(
-                    Vector3.zero, 
+                    Vector3.zero,
                     infoBoxRotateDuration)
                 .SetEase(Ease.OutElastic, 0.5f)
         );

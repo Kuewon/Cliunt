@@ -2,35 +2,42 @@ using UnityEngine;
 
 public class UISoundManager : MonoBehaviour
 {
-    private static UISoundManager instance; // 싱글톤 인스턴스
-    
+    private static UISoundManager instance;
 
-    [SerializeField] private AudioSource audioSource; // UI 사운드용 오디오 소스
+    public static UISoundManager Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = FindObjectOfType<UISoundManager>();
+                if (instance == null)
+                {
+                    Debug.LogError("UISoundManager 인스턴스가 존재하지 않습니다.");
+                }
+            }
+            return instance;
+        }
+    }
 
-    [Header("UI 사운드 클립 & 볼륨 설정")]
-    [SerializeField] private AudioClip clickSound; // 버튼 클릭 소리
-    [SerializeField] [Range(0f, 1f)] 
-    private float clickVolume = 0.3f; // 버튼 클릭 볼륨
+    [SerializeField] private AudioSource audioSource;
 
-    [SerializeField] private AudioClip closeSound; // 창 닫기 소리
-    [SerializeField] [Range(0f, 1f)] 
-    private float closeVolume = 0.3f; // 창 닫기 볼륨
+    [Header("UI 사운드 클립")]
+    [SerializeField] private AudioClip clickSound;
+    [SerializeField] [Range(0f, 1f)] private float clickVolume = 0.3f;
 
+    [SerializeField] private AudioClip tabSwitchSound;
+    [SerializeField] [Range(0f, 1f)] private float tabSwitchVolume = 0.3f;
 
-
-    
-    [Header("로비 사운드")]
-    [SerializeField] private AudioClip gameStartSound; // 버튼 클릭 소리
-    [SerializeField] [Range(0f, 1f)] 
-    private float gameStartVolume = 0.3f; // 버튼 클릭 볼륨
+    [SerializeField] private AudioClip closeSound;  // 🔹 UI 닫기 사운드 추가
+    [SerializeField] [Range(0f, 1f)] private float closeVolume = 0.3f;
 
     void Awake()
     {
-        // 싱글톤 패턴 적용 (UI 사운드 전용)
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject); // 씬 변경 시에도 유지
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -38,44 +45,18 @@ public class UISoundManager : MonoBehaviour
             return;
         }
 
-        // AudioSource가 없으면 자동 추가
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
 
-        // 기본 설정
-        audioSource.playOnAwake = false; // 자동 실행 X
-        audioSource.loop = false; // UI 사운드는 반복 X
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
     }
 
-    // 🔊 버튼 클릭 사운드 실행
-    public void PlayClickSound()
-    {
-        PlaySound(clickSound, clickVolume);
-    }
+    public void PlayClickSound() => PlaySound(clickSound, clickVolume);
+    public void PlayTabSwitchSound() => PlaySound(tabSwitchSound, tabSwitchVolume);
+    public void PlayCloseSound() => PlaySound(closeSound, closeVolume);  // 🔹 UI 닫기 사운드 메서드 추가
 
-    // 🔊 창 닫기 사운드 실행
-    public void PlayCloseSound()
-    {
-        PlaySound(closeSound, closeVolume);
-    }
-
-    // 로비 스타트 사운드
-    public void PlayLobbyGamseStartSound()
-    {
-        PlaySound(gameStartSound, gameStartVolume);
-    }
-
-    // 🔊 사운드 실행 함수 (개별 볼륨 적용)
     private void PlaySound(AudioClip clip, float volume)
     {
-        if (clip != null)
-        {
-            audioSource.PlayOneShot(clip, volume); // 개별 볼륨 적용
-        }
-    }
-
-    // 🔊 UI 사운드 볼륨 조절 (전체 적용)
-    public void SetGlobalVolume(float volume)
-    {
-        audioSource.volume = Mathf.Clamp(volume, 0f, 1f);
+        if (clip != null) audioSource.PlayOneShot(clip, volume);
     }
 }
