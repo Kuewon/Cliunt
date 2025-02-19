@@ -6,7 +6,8 @@ public class HealthBar : MonoBehaviour
     public enum EntityType
     {
         Player,
-        Enemy
+        Enemy,
+        Boss
     }
 
     [Header("Entity Settings")]
@@ -58,6 +59,9 @@ public class HealthBar : MonoBehaviour
                 break;
             case EntityType.Enemy:
                 rectTransform.anchoredPosition = new Vector2(100f, -120f);
+                break;
+            case EntityType.Boss:
+                rectTransform.anchoredPosition = new Vector2(75f, -120f);
                 break;
         }
     }
