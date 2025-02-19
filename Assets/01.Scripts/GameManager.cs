@@ -50,7 +50,7 @@ public class GameManager : MonoBehaviour
         if (WaveManager.Instance != null)
         {
             // 저장된 스테이지로 시작
-            // WaveManager.Instance.StartStage(stage);
+            WaveManager.Instance.StartStage(stage);
 
             WaveManager.Instance.OnStageChanged += OnStageChanged;
             WaveManager.Instance.OnWaveCompleted += OnWaveCompleted;
