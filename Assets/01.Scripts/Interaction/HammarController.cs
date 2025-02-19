@@ -8,10 +8,11 @@ namespace _01.Scripts.Interaction
         [Header("References")]
         [SerializeField] private RectTransform[] spinnerTriggers;
         [SerializeField] private GaugeBar gaugeBar;
-        [SerializeField] private FireHitEffect fireHitPrefab; // 🔥 Fire Hit 프리팹
-        [SerializeField] private Transform fireHitPoint; // 🔥 Fire Hit이 나올 위치
+        [SerializeField] private FireHitEffect fireHitPrefab;
+        [SerializeField] private Transform fireHitPoint;
+        [SerializeField] private SpinnerController spinnerController; // 추가된 SpinnerController 참조
 
-        [Header("🔔 진동 설정")] // ✅ 진동 관련 변수 추가
+        [Header("🔔 진동 설정")]
         [SerializeField] private long vibrationDuration = 30;
         [SerializeField] private int vibrationStrength = 30;
 
@@ -38,6 +39,15 @@ namespace _01.Scripts.Interaction
             if (playerController == null)
             {
                 Debug.LogError("CharacterController not found in the scene!");
+            }
+
+            if (spinnerController == null)
+            {
+                spinnerController = FindObjectOfType<SpinnerController>();
+                if (spinnerController == null)
+                {
+                    Debug.LogError("SpinnerController not found in the scene!");
+                }
             }
         }
 
@@ -67,19 +77,14 @@ namespace _01.Scripts.Interaction
                 int triggerIndex = _hitQueue.Dequeue();
                 _lastHitFrame = Time.frameCount;
 
-                // ✅ Hit 발생 시 GaugeBar에 알림
                 gaugeBar?.IncreaseGauge();
 
-                // ✅ Hit 발생 시 플레이어 공격 트리거
                 if (playerController != null)
                 {
                     playerController.TriggerManualAttack();
                 }
 
-                // 🔥 Fire Hit 이펙트 실행 (고정된 위치에서)
                 TriggerFireHitEffect();
-
-                // 📌 ✅ Hit 발생 시 진동 실행
                 TriggerVibration();
             }
 
@@ -93,11 +98,15 @@ namespace _01.Scripts.Interaction
                 if (_canHit[i] && _hasExitedHammer[i] &&
                     (IsTouchingHammer(currentPosition) || MultiSampleCheck(previousPosition, currentPosition)))
                 {
-                    if (!_hitQueue.Contains(i))
+                    // 총알 활성화 상태 확인
+                    if (spinnerController != null && spinnerController.IsBullettActive(i))
                     {
-                        _hitQueue.Enqueue(i);
-                        _canHit[i] = false;
-                        _hasExitedHammer[i] = false;
+                        if (!_hitQueue.Contains(i))
+                        {
+                            _hitQueue.Enqueue(i);
+                            _canHit[i] = false;
+                            _hasExitedHammer[i] = false;
+                        }
                     }
                 }
 
@@ -140,7 +149,6 @@ namespace _01.Scripts.Interaction
             return false;
         }
 
-        // 🔥 Fire Hit 이펙트 실행 함수 (고정된 위치에서 실행됨!)
         private void TriggerFireHitEffect()
         {
             if (fireHitPrefab != null && fireHitPoint != null) 
@@ -150,7 +158,6 @@ namespace _01.Scripts.Interaction
             }
         }
 
-        // 📌 ✅ 진동 실행 함수 (아주 짧고 약한 진동)
         private void TriggerVibration()
         {
             if (Application.platform == RuntimePlatform.Android)
@@ -168,7 +175,7 @@ namespace _01.Scripts.Interaction
             }
             else
             {
-                Handheld.Vibrate(); // 기본 진동 실행 (PC에서는 동작 X)
+                Handheld.Vibrate();
             }
         }
     }
