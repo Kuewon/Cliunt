@@ -3,63 +3,63 @@ using TMPro;
 
 public class SpinnerController : MonoBehaviour
 {
-    private RectTransform rectTransform;
-    private float currentSpinSpeed;
-    public bool isDragging;
-    private Vector2 lastMousePosition;
-    private float previousForce = 0f;
-    private float dragStartTime;
-    private float totalRotation = 0f;
-    private int rotationCount = 0;
+    private RectTransform rectTransform; // 스피너의 RectTransform 컴포넌트
+    private float currentSpinSpeed; // 현재 회전 속도
+    public bool isDragging; // 사용자가 드래그 중인지 여부
+    private Vector2 lastMousePosition; // 마지막 마우스 위치
+    private float previousForce = 0f; // 이전에 적용된 힘
+    private float dragStartTime; // 드래그 시작 시간
+    private float totalRotation = 0f; // 총 회전량
+    private int rotationCount = 0; // 총 회전 횟수
 
-    private float lastClickTime = 0f;
-    private float clickCooldown = 0.2f;
+    private float lastClickTime = 0f; // 마지막 클릭 시간
+    private float clickCooldown = 0.2f; // 클릭 간격 제한 (쿨다운)
 
     [Header("⚡ 회전 속도 설정")]
-    private float maxSpeed = 2000f; // SerializeField 제거하고 private로 변경
-    [SerializeField] private float accelerationMultiplier = 2.0f;
+    private float maxSpeed = 2000f; // 최대 회전 속도
+    [SerializeField] private float accelerationMultiplier = 2.0f; // 가속 계수
 
     [Header("🎯 힘 조절 설정")]
-    [SerializeField] private float minForce = 10f;
-    [SerializeField] private float maxForce = 2000f;
-    [SerializeField] private float maxAcceleration = 600f;
-    [SerializeField] private float powerCurve = 2.0f;
+    [SerializeField] private float minForce = 10f; // 최소 힘
+    [SerializeField] private float maxForce = 2000f; // 최대 힘
+    [SerializeField] private float maxAcceleration = 600f; // 최대 가속도
+    [SerializeField] private float powerCurve = 2.0f; // 힘 증가 곡선 조절값
 
     [Header("📏 해상도 조정")]
-    [SerializeField] private float baseScreenWidth = 1080f;
-    [SerializeField] private float baseScreenHeight = 1920f;
+    [SerializeField] private float baseScreenWidth = 1080f; // 기준 화면 너비
+    [SerializeField] private float baseScreenHeight = 1920f; // 기준 화면 높이
 
     [Header("🛑 감속 설정")]
-    [SerializeField] private float dampingRate = 0.99f;
-    [SerializeField] private float fixedDeceleration = 15f;
-    [SerializeField] private float spinStopThreshold = 10f;
-    [SerializeField] private float quickStopFactor = 2f;
+    [SerializeField] private float dampingRate = 0.99f; // 감속 비율
+    [SerializeField] private float fixedDeceleration = 15f; // 고정 감속량
+    [SerializeField] private float spinStopThreshold = 10f; // 회전 멈춤 기준 속도
+    [SerializeField] private float quickStopFactor = 2f; // 빠른 정지 계수
 
     [Header("⏳ 조작 시간 설정")]
-    [SerializeField] private float shortDragThreshold = 0.2f;
-    [SerializeField] private float shortDragBoost = 1.05f;
+    [SerializeField] private float shortDragThreshold = 0.2f; // 짧은 드래그 판정 시간
+    [SerializeField] private float shortDragBoost = 1.05f; // 짧은 드래그 시 속도 증가율
 
     [Header("📊 UI 속도 및 회전 수 표시")]
-    public TextMeshProUGUI speedText;
-    public TextMeshProUGUI rotationText;
+    public TextMeshProUGUI speedText; // 속도 표시 UI
+    public TextMeshProUGUI rotationText; // 회전 횟수 표시 UI
 
     private void Awake()
     {
-        rectTransform = GetComponent<RectTransform>();
+        rectTransform = GetComponent<RectTransform>(); // RectTransform 컴포넌트 가져오기
     }
 
     private void Start()
     {
-        UpdateMaxSpeedFromEquippedCylinder();
+        UpdateMaxSpeedFromEquippedCylinder(); // 실린더 장착 상태에 따라 최대 속도 업데이트
     }
 
     private void Update()
     {
-        ApplyRotation();
-        UpdateUI();
+        ApplyRotation(); // 회전 적용
+        UpdateUI(); // UI 업데이트
     }
 
-    // 실린더의 MaxSpeed 값을 가져와서 업데이트하는 메서드
+    // 실린더의 최대 속도를 가져와 업데이트하는 메서드
     private void UpdateMaxSpeedFromEquippedCylinder()
     {
         string sheetName = "Cylinder";
@@ -75,7 +75,7 @@ public class SpinnerController : MonoBehaviour
         Debug.Log($"🔄 실린더의 최대 회전 속도가 {maxSpeed}으로 업데이트되었습니다.");
     }
 
-    // EquipmentManager에서 실린더 장착 시 호출할 수 있는 public 메서드
+    // 실린더 장착 시 호출되는 메서드
     public void OnCylinderEquipped()
     {
         UpdateMaxSpeedFromEquippedCylinder();
@@ -119,7 +119,6 @@ public class SpinnerController : MonoBehaviour
             float normalizedDelta = delta.magnitude / (Screen.height * 0.5f);
             float distanceFactor = Mathf.Pow(Mathf.Clamp(normalizedDelta, 0, 1f), powerCurve) * heightRatio * scaleFactor;
             float rawForce = minForce + (maxForce - minForce) * Mathf.Pow(distanceFactor, 1.5f);
-
             rawForce = Mathf.Clamp(rawForce, minForce, maxForce * 0.75f);
 
             float deltaSpeed = Mathf.Lerp(previousForce, rawForce, 0.1f);
